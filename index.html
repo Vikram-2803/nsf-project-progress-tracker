@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Progress</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FSEL HOLOGRAPHIC HUD — DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg:        #05090F;
+  --panel:     #0A1320;
+  --panel-2:   #0D1A2B;
+  --line:      rgba(82, 213, 255, 0.16);
+  --line-hi:   rgba(82, 213, 255, 0.45);
+  --cyan:      #3FE0FF;
+  --cyan-soft: rgba(63, 224, 255, 0.12);
+  --amber:     #FFB454;
+  --amber-soft:rgba(255, 180, 84, 0.12);
+  --green:     #4DF59B;
+  --green-soft:rgba(77, 245, 155, 0.10);
+  --red:       #FF5C7A;
+  --red-soft:  rgba(255, 92, 122, 0.10);
+  --text:      #D7E9F5;
+  --dim:       #6E8AA5;
+  --display:   'Rajdhani', 'Segoe UI', sans-serif;
+  --mono:      'Share Tech Mono', 'Courier New', monospace;
+  --ease-out:  cubic-bezier(.22, 1, .36, 1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scrollbar-color: #1A3550 var(--bg); }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--display); min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ---------- Ambient layers (subtle, GPU-cheap) ---------- */
+.amb-grid {
+  position:fixed; inset:-60px; z-index:-2; pointer-events:none; opacity:.5;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(63,224,255,0.08), transparent),
+    linear-gradient(rgba(63,224,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63,224,255,.025) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+  animation: griddrift 60s linear infinite;
+}
+@keyframes griddrift { from { transform:translate3d(0,0,0); } to { transform:translate3d(48px,48px,0); } }
+.amb-scan {
+  position:fixed; left:0; right:0; height:140px; z-index:-1; pointer-events:none;
+  background:linear-gradient(180deg, transparent, rgba(63,224,255,.035), transparent);
+  animation: scansweep 9s var(--ease-out) infinite;
+}
+@keyframes scansweep { 0% { top:-20%; } 70%, 100% { top:115%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation:none !important; transition:none !important; }
+}
+
+/* ---------- Entrance choreography ---------- */
+@keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+@keyframes viewfade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@keyframes growx { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+@keyframes glowpulse { 0%,100% { box-shadow:0 0 6px var(--amber); } 50% { box-shadow:0 0 14px var(--amber); } }
+@keyframes sheen {
+  0%, 18% { transform:translateX(-110%) skewX(-18deg); }
+  38%, 100% { transform:translateX(240%) skewX(-18deg); }
+}
+#view.vin { animation: viewfade .35s var(--ease-out) both; }
+.panel, .kpi { animation: rise .5s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+
+/* ---------- HUD frame & header ---------- */
+.shell { max-width:1320px; margin:0 auto; padding:18px 20px 80px; }
+header.hud {
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  border:1px solid var(--line); background:linear-gradient(180deg, var(--panel-2), var(--panel));
+  padding:16px 20px; position:relative; margin-bottom:14px;
+  animation: rise .5s var(--ease-out) both;
+}
+.corners::before, .corners::after, .corners > .c::before, .corners > .c::after {
+  content:''; position:absolute; width:14px; height:14px; pointer-events:none;
+  transition: width .25s, height .25s;
+}
+.corners::before { top:-1px; left:-1px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); }
+.corners::after  { top:-1px; right:-1px; border-top:2px solid var(--cyan); border-right:2px solid var(--cyan); }
+.corners > .c::before { bottom:-1px; left:-1px; border-bottom:2px solid var(--cyan); border-left:2px solid var(--cyan); }
+.corners > .c::after  { bottom:-1px; right:-1px; border-bottom:2px solid var(--cyan); border-right:2px solid var(--cyan); }
+.panel:hover.corners::before, .panel:hover.corners::after,
+.panel:hover.corners > .c::before, .panel:hover.corners > .c::after { width:22px; height:22px; }
+.brand h1 { font-size:22px; font-weight:700; letter-spacing:3px; text-transform:uppercase; text-shadow:0 0 18px rgba(63,224,255,.25); }
+.brand h1 span { color:var(--cyan); }
+.brand .sub { font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-top:2px; }
+.hud-spacer { flex:1; }
+.hud-meta { text-align:right; font-family:var(--mono); font-size:11px; color:var(--dim); line-height:1.7; }
+.hud-meta .live { color:var(--green); }
+.hud-meta .live .sync-time { display:block; color:var(--dim); margin-top:2px; }
+.hud-meta .live.warn { color:var(--amber); }
+.hud-meta .live::before { content:'\25CF'; margin-right:5px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.ring-wrap { display:flex; align-items:center; gap:12px; }
+.ring { width:64px; height:64px; transform:rotate(-90deg); }
+.ring circle { fill:none; stroke-width:5; }
+.ring .track { stroke:rgba(63,224,255,0.12); }
+.ring .arc { stroke:var(--cyan); stroke-linecap:round; transition:stroke-dashoffset 1s var(--ease-out); filter:drop-shadow(0 0 5px rgba(63,224,255,.65)); }
+.ring-label { font-family:var(--mono); }
+.ring-label b { font-size:20px; color:var(--cyan); }
+.ring-label small { display:block; font-size:10px; color:var(--dim); letter-spacing:2px; }
+button.hud-btn {
+  font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+  background:transparent; color:var(--cyan); border:1px solid var(--line-hi);
+  padding:9px 16px; cursor:pointer; transition:all .2s var(--ease-out);
+}
+button.hud-btn:hover { background:var(--cyan-soft); box-shadow:0 0 14px rgba(63,224,255,.3); transform:translateY(-1px); }
+button.hud-btn.unlocked { color:var(--amber); border-color:rgba(255,180,84,.5); }
+button.hud-btn.unlocked:hover { background:var(--amber-soft); box-shadow:0 0 14px rgba(255,180,84,.3); }
+button:focus-visible, .tab:focus-visible, .chip:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+
+/* ---------- Tabs & phase bar ---------- */
+nav.tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.tab {
+  font-family:var(--mono); font-size:12px; letter-spacing:2px; text-transform:uppercase;
+  background:var(--panel); color:var(--dim); border:1px solid var(--line);
+  padding:10px 16px; cursor:pointer; position:relative; transition:all .2s var(--ease-out);
+}
+.tab:hover { color:var(--text); transform:translateY(-1px); }
+.tab.active { color:var(--cyan); border-color:var(--line-hi); background:var(--cyan-soft); }
+.tab.active::after { content:''; position:absolute; left:10%; right:10%; bottom:-1px; height:2px; background:var(--cyan); box-shadow:0 0 8px var(--cyan); }
+.phasebar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.phasebar .plabel { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--dim); }
+.chip {
+  font-family:var(--mono); font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+  border:1px solid var(--line); background:transparent; color:var(--dim); padding:6px 14px; cursor:pointer;
+  transition:all .2s var(--ease-out);
+}
+.chip:hover { color:var(--text); transform:translateY(-1px); }
+.chip.on { color:var(--cyan); border-color:var(--line-hi); background:var(--cyan-soft); }
+.chip.ghost { border-style:dashed; }
+
+/* ---------- Panels & KPIs ---------- */
+.panel { border:1px solid var(--line); background:var(--panel); padding:18px; position:relative; margin-bottom:14px; }
+.panel-title { font-family:var(--mono); font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.panel-title::before { content:''; width:8px; height:8px; background:var(--cyan); clip-path:polygon(0 0,100% 50%,0 100%); }
+.panel-title .right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+.kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:14px; }
+.kpi { border:1px solid var(--line); background:var(--panel); padding:14px 16px; transition:border-color .25s, box-shadow .25s; }
+.kpi:hover { border-color:var(--line-hi); box-shadow:0 0 16px rgba(63,224,255,.1); }
+.kpi b { font-size:26px; font-weight:700; display:block; }
+.kpi small { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; }
+.kpi.done b { color:var(--green); } .kpi.active b { color:var(--amber); }
+.kpi.pending b { color:var(--dim); } .kpi.total b { color:var(--cyan); } .kpi.alert b { color:var(--red); }
+
+/* ---------- Pipeline strip + lens ---------- */
+.pipeline { display:flex; gap:4px; overflow-x:auto; padding-bottom:4px; }
+.stage {
+  flex:1; min-width:128px; position:relative; padding:12px 14px 12px 22px; cursor:pointer;
+  background:var(--panel-2); border:1px solid var(--line); transition:background .2s, border-color .2s;
+  clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);
+  overflow:hidden;
+  animation: rise .5s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms);
+}
+.stage:first-child { clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%); padding-left:14px; }
+.stage::after {   /* traveling energy wave: per-stage sheen offset by index */
+  content:''; position:absolute; top:0; bottom:0; width:45%; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(63,224,255,.10), transparent);
+  animation: sheen 5.5s linear infinite; animation-delay: calc(var(--i, 0) * .45s);
+}
+.stage:hover { background:#11233A; }
+.stage.sel { background:var(--cyan-soft); border-color:var(--line-hi); }
+.stage .s-name { font-weight:700; font-size:14px; letter-spacing:1.5px; text-transform:uppercase; }
+.stage .s-w { font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; }
+.stage .s-pct { font-family:var(--mono); font-size:18px; margin-top:4px; }
+.stage .s-bar { height:3px; background:rgba(63,224,255,.12); margin-top:8px; position:relative; overflow:hidden; }
+.stage .s-fill { position:absolute; inset:0 auto 0 0; transform-origin:left; animation: growx .9s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.stage[data-band="lo"] .s-pct { color:var(--dim); }   .stage[data-band="lo"] .s-fill { background:var(--dim); }
+.stage[data-band="mid"] .s-pct { color:var(--amber); } .stage[data-band="mid"] .s-fill { background:var(--amber); box-shadow:0 0 8px var(--amber); }
+.stage[data-band="hi"] .s-pct { color:var(--green); }  .stage[data-band="hi"] .s-fill { background:var(--green); box-shadow:0 0 8px var(--green); }
+.lens { margin-top:12px; border:1px solid var(--line-hi); background:var(--panel-2); padding:14px 16px; animation: rise .35s var(--ease-out) both; }
+.lens h3 { font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--cyan); text-transform:uppercase; margin-bottom:10px; }
+.lens-cols { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+.lens-col h4 { font-family:var(--mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:7px; }
+.lens-col.done h4 { color:var(--green); } .lens-col.active h4 { color:var(--amber); } .lens-col.pending h4 { color:var(--dim); }
+.lens-col div { font-size:13px; padding:3px 0; border-bottom:1px dashed var(--line); display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.lens-col .none { color:var(--dim); font-family:var(--mono); font-size:11px; border:none; }
+
+/* ---------- Matrix ---------- */
+.table-scroll { overflow-x:auto; }
+table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:13px; }
+.matrix th {
+  font-family:var(--mono); font-size:10px; letter-spacing:1.5px; color:var(--dim);
+  text-transform:uppercase; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line-hi);
+}
+.matrix td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle; transition:background .2s; }
+.matrix tbody tr { animation: rise .45s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+.matrix tr:hover td { background:rgba(63,224,255,.04); }
+.series-id { font-weight:700; font-size:14px; letter-spacing:.5px; }
+.series-tags { font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:3px; letter-spacing:.5px; display:flex; gap:5px; flex-wrap:wrap; }
+.tag { border:1px solid var(--line); padding:1px 6px; white-space:nowrap; }
+.tag.sev { color:var(--amber); border-color:rgba(255,180,84,.35); }   /* fallback */
+.tag.sev-m  { color:#F5D14E; border-color:rgba(245,209,78,.45); }   /* Mild — yellow */
+.tag.sev-md { color:#FF983D; border-color:rgba(255,152,61,.5); }   /* Moderate — orange */
+.tag.sev-s  { color:#FF5247; border-color:rgba(255,82,71,.55); }     /* Severe — red */
+.tag.ctrl { color:var(--green); border-color:rgba(77,245,155,.35); }
+.cell-chip {
+  font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:5px 9px;
+  border:1px solid; cursor:default; background:transparent; white-space:nowrap; text-transform:uppercase;
+  transition:box-shadow .2s, transform .15s;
+}
+.editable .cell-chip { cursor:pointer; }
+.editable .cell-chip:hover { box-shadow:0 0 10px currentColor; transform:translateY(-1px); }
+.cell-chip.pending { color:var(--dim); border-color:rgba(110,138,165,.4); }
+.cell-chip.active  { color:var(--amber); border-color:rgba(255,180,84,.55); background:var(--amber-soft); }
+.cell-chip.done    { color:var(--green); border-color:rgba(77,245,155,.55); background:var(--green-soft); }
+.cell-chip.ordered   { color:var(--cyan); border-color:rgba(63,224,255,.45); }
+.cell-chip.transit   { color:var(--amber); border-color:rgba(255,180,84,.55); background:var(--amber-soft); }
+.cell-chip.delivered { color:var(--green); border-color:rgba(77,245,155,.55); background:var(--green-soft); }
+.cell-chip.delayed   { color:var(--red); border-color:rgba(255,92,122,.55); background:var(--red-soft); }
+.row-pct { font-family:var(--mono); white-space:nowrap; }
+.row-pct .mini { display:inline-block; width:56px; height:4px; background:rgba(63,224,255,.12); vertical-align:middle; margin-right:8px; position:relative; overflow:hidden; }
+.row-pct .mini i { position:absolute; inset:0 auto 0 0; background:var(--cyan); transform-origin:left; animation: growx .9s var(--ease-out) both; }
+.icon-btn { background:none; border:none; color:var(--dim); cursor:pointer; font-size:14px; padding:4px 6px; font-family:var(--mono); transition:color .2s; }
+.icon-btn:hover { color:var(--cyan); }
+.icon-btn.danger:hover { color:var(--red); }
+
+/* ---------- Timeline / Gantt ---------- */
+.g-wrap { min-width:760px; }
+.g-axis { display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px; }
+.g-axis .t { color:var(--amber); }
+.g-rows { position:relative; --glabel:250px; }
+.g-row { display:grid; grid-template-columns:var(--glabel) 1fr; gap:14px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); animation: rise .45s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+.g-label .series-id { font-size:13px; }
+.g-track { position:relative; height:20px; background:rgba(63,224,255,.05); }
+.g-bar { position:absolute; top:3px; bottom:3px; background:transparent; border:1px solid var(--line-hi); overflow:hidden; display:flex; transform-origin:left; animation: growx .9s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+.g-bar.overdue { border-color:rgba(255,92,122,.75); box-shadow:0 0 8px rgba(255,92,122,.25); }
+.g-seg { height:100%; min-width:0; }
+.g-seg + .g-seg { box-shadow:-1px 0 0 rgba(5,9,15,.55); }   /* boundary between stages */
+.g-seg.done    { background:linear-gradient(90deg, rgba(77,245,155,.50), rgba(77,245,155,.28)); }
+.g-seg.active  { background:linear-gradient(90deg, rgba(255,180,84,.55), rgba(255,180,84,.28)); }
+.g-seg.pending { background:rgba(63,224,255,.05); }
+.g-seg.est { background-image:repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(215,233,245,.05) 4px, rgba(215,233,245,.05) 8px); }
+.g-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-top:12px; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--dim); }
+.g-legend .seq { color:var(--dim); }
+.g-legend .lg { display:inline-flex; align-items:center; gap:6px; text-transform:uppercase; }
+.g-legend .lg::before { content:''; width:14px; height:10px; border:1px solid var(--line-hi); }
+.g-legend .lg.done::before { background:rgba(77,245,155,.4); }
+.g-legend .lg.active::before { background:rgba(255,180,84,.45); }
+.g-legend .lg.pending::before { background:rgba(63,224,255,.05); }
+.g-pct { position:absolute; right:6px; top:50%; transform:translateY(-50%); font-family:var(--mono); font-size:9px; color:var(--text); }
+.g-nodates { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; }
+.today-line { position:absolute; top:0; bottom:0; width:1px; background:var(--amber); z-index:2; pointer-events:none; animation: glowpulse 2.5s ease-in-out infinite; }
+
+/* ---------- Orders ---------- */
+.radar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.radar .rchip { font-family:var(--mono); font-size:11px; letter-spacing:1px; padding:8px 14px; border:1px solid var(--line); animation: rise .45s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+.radar .rchip b { font-size:15px; margin-right:6px; }
+.radar .soon b { color:var(--amber); } .radar .late b { color:var(--red); } .radar .in b { color:var(--green); }
+.order, .act {
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; border:1px solid var(--line);
+  background:var(--panel-2); padding:12px 16px; margin-bottom:8px;
+  animation: rise .45s var(--ease-out) both; animation-delay: var(--d, 0ms);
+  transition:border-color .25s, box-shadow .25s;
+}
+.order:hover, .act:hover { border-color:var(--line-hi); box-shadow:0 0 14px rgba(63,224,255,.08); }
+.order { border-left:3px solid var(--cyan); }
+.order[data-st="delayed"] { border-left-color:var(--red); }
+.order[data-st="delivered"] { border-left-color:var(--green); }
+.order[data-st="transit"] { border-left-color:var(--amber); }
+.order .o-title { font-weight:600; font-size:15px; }
+.order .o-meta { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:3px; }
+.order .o-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.eta { font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:4px 8px; border:1px dashed var(--line); color:var(--dim); white-space:nowrap; }
+.eta.soon { color:var(--amber); border-color:rgba(255,180,84,.5); }
+.eta.late { color:var(--red); border-color:rgba(255,92,122,.5); }
+.eta.in { color:var(--green); border-color:rgba(77,245,155,.5); }
+
+/* ---------- Activities ---------- */
+.filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.act { border-left:3px solid var(--dim); }
+.act[data-st="active"] { border-left-color:var(--amber); }
+.act[data-st="done"] { border-left-color:var(--green); }
+.act .a-title { font-weight:600; font-size:15px; }
+.act .a-meta { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:3px; }
+.act .a-meta .cat { color:var(--cyan); }
+.act .a-right { margin-left:auto; display:flex; align-items:center; gap:6px; }
+.act .a-notes, .order .o-notes { width:100%; font-size:12px; color:var(--dim); border-top:1px dashed var(--line); padding-top:6px; margin-top:2px; }
+
+/* ---------- Feed / empty ---------- */
+.feed { font-family:var(--mono); font-size:11px; display:grid; gap:6px; max-height:240px; overflow-y:auto; }
+.feed div { color:var(--dim); border-left:2px solid var(--line); padding-left:10px; line-height:1.5; }
+.feed-head { cursor:pointer; transition:color .15s; }
+.feed-head:hover { color:var(--text); }
+.feed-head .feed-open { margin-left:auto; color:var(--cyan); font-size:10px; letter-spacing:1.5px; }
+.fd-list { display:grid; gap:6px; margin-top:14px; max-height:52vh; overflow-y:auto; font-family:var(--mono); font-size:11px; }
+.fd-row { color:var(--dim); border-left:2px solid var(--line); padding-left:10px; line-height:1.5; }
+.fd-row time { color:var(--cyan); margin-right:8px; }
+.feed time { color:var(--cyan); margin-right:8px; }
+.empty { text-align:center; padding:40px 20px; color:var(--dim); font-family:var(--mono); font-size:12px; letter-spacing:1px; line-height:2; }
+
+/* ---------- Modal & toasts ---------- */
+.overlay { position:fixed; inset:0; background:rgba(3,6,11,.82); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+.overlay.show { display:flex; }
+@keyframes modalin { from { opacity:0; transform:translateY(16px) scale(.985); } to { opacity:1; transform:none; } }
+.modal { width:100%; max-width:500px; border:1px solid var(--line-hi); background:var(--panel); padding:22px; position:relative; box-shadow:0 0 40px rgba(63,224,255,.12); max-height:90vh; overflow-y:auto; animation: modalin .3s var(--ease-out) both; }
+.modal h2 { font-size:16px; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:16px; color:var(--cyan); font-weight:700; }
+.field { margin-bottom:13px; }
+.field label { display:block; font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:5px; }
+.field input, .field select, .field textarea { width:100%; background:#060D17; border:1px solid var(--line); color:var(--text); font-family:var(--mono); font-size:13px; padding:9px 11px; transition:border-color .2s, box-shadow .2s; }
+.field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:var(--cyan); box-shadow:0 0 10px rgba(63,224,255,.22); }
+.field textarea { resize:vertical; min-height:60px; }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.field-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.ph-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+.ph-row input { flex:1; background:#060D17; border:1px solid var(--line); color:var(--text); font-family:var(--mono); font-size:13px; padding:9px 11px; }
+.ph-row.rowdel input { text-decoration:line-through; opacity:.4; }
+.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap; }
+button.btn-ghost { font-family:var(--mono); font-size:12px; letter-spacing:1px; background:transparent; border:1px solid var(--line); color:var(--dim); padding:9px 18px; cursor:pointer; text-transform:uppercase; transition:all .2s; }
+button.btn-ghost:hover { color:var(--text); transform:translateY(-1px); }
+button.btn-go { font-family:var(--mono); font-size:12px; letter-spacing:1px; background:var(--cyan-soft); border:1px solid var(--line-hi); color:var(--cyan); padding:9px 18px; cursor:pointer; text-transform:uppercase; transition:all .2s; }
+button.btn-go:hover { box-shadow:0 0 14px rgba(63,224,255,.35); transform:translateY(-1px); }
+button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px; background:var(--red-soft); border:1px solid rgba(255,92,122,.5); color:var(--red); padding:9px 18px; cursor:pointer; text-transform:uppercase; }
+.modal .note { font-family:var(--mono); font-size:10px; color:var(--dim); line-height:1.7; margin-top:10px; }
+.modal .err { font-family:var(--mono); font-size:11px; color:var(--red); margin-top:8px; display:none; }
+#toasts { position:fixed; bottom:20px; right:20px; display:grid; gap:8px; z-index:60; }
+@keyframes toastin { from { transform:translateX(36px); opacity:0; } to { transform:none; opacity:1; } }
+.toast { font-family:var(--mono); font-size:12px; letter-spacing:1px; padding:11px 18px; border:1px solid var(--line-hi); background:var(--panel); color:var(--cyan); box-shadow:0 0 16px rgba(63,224,255,.15); animation: toastin .3s var(--ease-out) both; }
+.toast.warn { color:var(--amber); border-color:rgba(255,180,84,.5); }
+.toast.bad { color:var(--red); border-color:rgba(255,92,122,.5); }
+
+@media (max-width:680px) {
+  header.hud { gap:12px; }
+  .hud-meta { display:none; }
+  .field-row, .field-row3 { grid-template-columns:1fr; }
+  .g-rows { --glabel:160px; }
+}
+</style>
+</head>
+<body>
+<div class="amb-grid" aria-hidden="true"></div>
+<div class="amb-scan" aria-hidden="true"></div>
+<div class="shell">
+
+  <header class="hud corners"><span class="c"></span>
+    <div class="brand">
+      <h1>Project <span>Progress</span></h1>
+      <div class="sub">NSF &mdash; CSR &middot; ASR &middot; FTC &middot; SIMULTANEOUS DETERIORATION PROGRAM</div>
+    </div>
+    <div class="hud-spacer"></div>
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+        <circle class="track" cx="32" cy="32" r="27"></circle>
+        <circle class="arc" id="ringArc" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"></circle>
+      </svg>
+      <div class="ring-label"><b id="ringPct">0%</b><small>WEIGHTED</small></div>
+    </div>
+    <div class="hud-meta">
+      <div class="live" id="syncStatus">CONNECTING&hellip;</div>
+    </div>
+    <button class="hud-btn" id="lockBtn" data-action="lock-menu">&#9919; UNLOCK EDIT</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-action="tab" data-tab="overview" role="tab">Overview</button>
+    <button class="tab" data-action="tab" data-tab="matrix" role="tab">Series Matrix</button>
+    <button class="tab" data-action="tab" data-tab="timeline" role="tab">Timeline</button>
+    <button class="tab" data-action="tab" data-tab="orders" role="tab">Materials &amp; Orders</button>
+    <button class="tab" data-action="tab" data-tab="activities" role="tab">Activities</button>
+  </nav>
+
+  <div class="phasebar" id="phasebar"></div>
+
+  <main id="view"></main>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal corners" id="modalBox"><span class="c"></span></div></div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   FSEL FABRICATION TRACKER — standalone-deployable build
+   ------------------------------------------------------------
+   STORAGE MODES (auto-detected, in priority order):
+   1. CLAUDE   — inside a Claude artifact, uses window.storage
+                 shared scope (polled every 25 s).
+   2. FIREBASE — standalone on the web (GitHub Pages, Netlify,
+                 lab server). Paste your Firebase config below.
+                 Realtime: changes push instantly to all viewers.
+   3. LOCAL    — no backend configured: runs as a local preview,
+                 nothing is saved or shared (warning shown).
+
+   Security model: SHA-256-hashed passcode is a client-side soft
+   lock; all user input HTML-escaped; no localStorage; no inline
+   event handlers (single delegated listener).
+   ============================================================ */
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║  TO DEPLOY STANDALONE: paste your Firebase web-app config ║
+   ║  here (Firebase console → Project settings → Your apps).  ║
+   ║  databaseURL is REQUIRED — create a Realtime Database.    ║
+   ╚══════════════════════════════════════════════════════════╝ */
+const FIREBASE_CONFIG = {
+  apiKey:        "AIzaSyCvxNVERxv1sawMh2aX-qNXB0ge8Xj6r-k",
+  authDomain:    "nsf-project-progress-tracker.firebaseapp.com",
+  databaseURL:   "https://nsf-project-progress-tracker-default-rtdb.firebaseio.com",
+  projectId:     "nsf-project-progress-tracker",
+  storageBucket: "nsf-project-progress-tracker.firebasestorage.app",
+  messagingSenderId: "1097430586880",
+  appId:         "1:1097430586880:web:14223db59b5e4a04aaeae5"
+};
+const FIREBASE_PATH = 'nsf_tracker/state';   /* matches the published Realtime Database rule */
+
+/* ----------------------------- CONFIG ----------------------------- */
+const STORE_KEY = 'fsel_tracker_state_v2';
+const POLL_MS = 25000;
+const STEP_DEFS = [
+  { id: 'cage', name: 'Cage' }, { id: 'formwork', name: 'Formwork' }, { id: 'cast', name: 'Cast' },
+  { id: 'cure', name: 'Cure' }, { id: 'condition', name: 'Condition' }, { id: 'test', name: 'Test' }
+];
+/* Fixed real stage durations in days (Condition is derived per series from its
+   start/end window). Mirrors the RT1 fabrication schedule. */
+const STAGE_FIXED_DAYS = { cage: 6, formwork: 3, cast: 2, cure: 28, test: 4 };
+const DEFAULT_WEIGHTS = { cage: 1, formwork: 1, cast: 1, cure: 1, condition: 3, test: 2 };
+const STATUS_ORDER = ['pending', 'active', 'done'];
+const STATUS_LABEL = { pending: 'Not Started', active: 'In Progress', done: 'Done' };
+const STATUS_VALUE = { pending: 0, active: 0.5, done: 1 };
+const ORDER_ORDER = ['ordered', 'transit', 'delivered', 'delayed'];
+const ORDER_LABEL = { ordered: 'Ordered', transit: 'In Transit', delivered: 'Delivered', delayed: 'Delayed' };
+const SEV_LABEL = { N: 'None', M: 'Mild', MD: 'Moderate', S: 'Severe' };
+const SEV_KEYS = ['N', 'M', 'MD', 'S'];   /* ascending severity, used by the series form */
+const COVER_OPTIONS = ['1.5"', '2.5"'];   /* selectable concrete-cover values */
+/* Default passcode: FSEL2026 (change it from the unlocked menu) */
+const DEFAULT_PASS_HASH = 'edec4fbe684b5f98bd4509dce6fc3fc9381836d22588547d117583c6279f668e';
+
+/* ----------------------------- UTIL ----------------------------- */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const nowStamp = () => new Date().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const parseDay = (s) => (s ? new Date(s + 'T00:00:00') : null);
+const DAY = 86400000;
+const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function toast(msg, kind = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + kind;
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3400);
+}
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+/* ----------------------------- SHA-256 ----------------------------- */
+/* Pure-JS fallback (verified against FIPS vectors) for contexts where
+   crypto.subtle is unavailable or blocked. */
+function jsSha256(message) {
+  const bytes = new TextEncoder().encode(message);
+  const K = new Uint32Array([
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ]);
+  const H = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const l = bytes.length;
+  const bitLen = l * 8;
+  const padded = new Uint8Array((((l + 8) >> 6) + 1) << 6);
+  padded.set(bytes);
+  padded[l] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(padded.length - 4, bitLen >>> 0);
+  dv.setUint32(padded.length - 8, Math.floor(bitLen / 0x100000000));
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let i = 0; i < padded.length; i += 64) {
+    for (let t = 0; t < 16; t++) w[t] = dv.getUint32(i + t * 4);
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[t] + w[t]) >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H[0]=(H[0]+a)>>>0; H[1]=(H[1]+b)>>>0; H[2]=(H[2]+c)>>>0; H[3]=(H[3]+d)>>>0;
+    H[4]=(H[4]+e)>>>0; H[5]=(H[5]+f)>>>0; H[6]=(H[6]+g)>>>0; H[7]=(H[7]+h)>>>0;
+  }
+  return [...H].map((x) => x.toString(16).padStart(8, '0')).join('');
+}
+async function sha256Hex(str) {
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch (e) { /* fall through to JS implementation */ }
+  return jsSha256(str);
+}
+
+/* ----------------------------- STORAGE ADAPTER ----------------------------- */
+const Store = {
+  mode: 'local',            /* 'claude' | 'firebase' | 'local' */
+  _ref: null,
+  _lastWritten: null,       /* echo suppression for firebase listener */
+
+  async init() {
+    if (typeof window.storage === 'object' && window.storage && typeof window.storage.get === 'function') {
+      this.mode = 'claude';
+      return;
+    }
+    if (FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL) {
+      try {
+        await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+        await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+        firebase.initializeApp(FIREBASE_CONFIG);
+        this._ref = firebase.database().ref(FIREBASE_PATH);
+        this.mode = 'firebase';
+        return;
+      } catch (e) {
+        toast('FIREBASE CONNECTION FAILED — LOCAL PREVIEW MODE', 'bad');
+      }
+    }
+    this.mode = 'local';
+  },
+
+  async load() {
+    if (this.mode === 'claude') {
+      try {
+        const res = await window.storage.get(STORE_KEY, true);
+        return res && res.value ? res.value : null;
+      } catch (e) { return null; }
+    }
+    if (this.mode === 'firebase') {
+      const snap = await this._ref.get();
+      const v = snap.val();
+      return typeof v === 'string' ? v : null;
+    }
+    return null;            /* local preview: always start from seed */
+  },
+
+  async save(json) {
+    if (this.mode === 'claude') {
+      const res = await window.storage.set(STORE_KEY, json, true);
+      if (!res) throw new Error('save returned null');
+      return;
+    }
+    if (this.mode === 'firebase') {
+      this._lastWritten = json;
+      await this._ref.set(json);
+      return;
+    }
+    /* local mode: state lives in memory only */
+  },
+
+  /* cb(json) fires when a remote change arrives */
+  subscribe(cb) {
+    if (this.mode === 'claude') {
+      setInterval(async () => {
+        if (document.hidden) return;
+        try {
+          const res = await window.storage.get(STORE_KEY, true);
+          if (res && res.value) cb(res.value);
+          markSynced();
+        } catch (e) { /* keep last known state */ }
+      }, POLL_MS);
+    } else if (this.mode === 'firebase') {
+      this._ref.on('value', (snap) => {
+        const v = snap.val();
+        if (typeof v === 'string' && v !== this._lastWritten) cb(v);
+        markSynced();
+      });
+    }
+  },
+
+  statusLabel() {
+    if (this.mode === 'claude') return 'Last updated';
+    if (this.mode === 'firebase') return 'Last updated';
+    return 'Not saved \u2014 local preview';
+  }
+};
+
+/* ----------------------------- STATE ----------------------------- */
+let state = null;
+let editMode = false;       /* session-only; never persisted */
+let currentTab = 'overview';
+let phaseFilter = 'all';
+let activityFilter = 'all';
+let lensStep = null;
+let modalOpen = false;
+let pendingRemote = null;   /* remote update held while a modal is open */
+
+const blankSteps = () => Object.fromEntries(STEP_DEFS.map((s) => [s.id, 'pending']));
+const blankSev = () => ({ csr: 'N', asr: 'N', ftc: 'N' });
+
+function defaultState() {
+  const ph = {};
+  ['RT1', 'RT2', 'RT3', 'RT4'].forEach((n) => { ph[n] = uid(); });
+  const phases = Object.entries(ph).map(([name, id]) => ({ id, name }));
+  const mk = (phase, batch, bar, cover, sev, beams, start, end, steps, actuals) => ({
+    id: uid(), phaseId: ph[phase], batch, bar, cover, sev, beams, start, end,
+    steps: { ...blankSteps(), ...(steps || {}) },
+    actuals: { ...(actuals || {}) }
+  });
+  return {
+    passHash: DEFAULT_PASS_HASH,
+    weights: { ...DEFAULT_WEIGHTS },
+    phases,
+    series: [
+      mk('RT1', 1, '#5', '1.5"', { csr: 'N', asr: 'N', ftc: 'N' }, 2, '2026-05-04', '2026-10-30',
+        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' },
+        { cage: '2026-05-11', formwork: '2026-05-15', cast: '2026-05-18' }),
+      mk('RT1', 1, '#5', '1.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-04', '2027-12-17',
+        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' }),
+      mk('RT1', 1, '#5', '2.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-11', '2027-12-17',
+        { cage: 'done', formwork: 'active' }),
+      mk('RT1', 2, '#7', '1.5"', { csr: 'MD', asr: 'MD', ftc: 'N' }, 2, '2026-07-06', '2028-02-18',
+        { cage: 'active' }),
+      mk('RT1', 2, '#7', '2.5"', { csr: 'S', asr: 'MD', ftc: 'N' }, 2, '2026-07-06', '2028-02-18', {}),
+      mk('RT1', 3, '#11', '1.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {}),
+      mk('RT1', 3, '#11', '2.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {})
+    ],
+    orders: [
+      { id: uid(), item: 'Jobe-Newman reactive fine aggregate', vendor: 'TX aggregate supplier', qty: '6 CY',
+        phaseId: ph.RT1, ordered: '2026-04-20', expected: '2026-05-08', status: 'delivered', notes: '' },
+      { id: uid(), item: 'ENPAC 5550 conditioning tanks', vendor: 'ENPAC', qty: '2 EA',
+        phaseId: ph.RT1, ordered: '2026-05-26', expected: '2026-06-19', status: 'transit', notes: 'Tank 1 = 1.5" cover series, Tank 2 = 2.5" cover series.' },
+      { id: uid(), item: 'NaOH pellets (bath chemistry + alkali boost)', vendor: '', qty: '45 kg',
+        phaseId: ph.RT1, ordered: '2026-06-02', expected: '2026-06-26', status: 'ordered', notes: '' },
+      { id: uid(), item: 'NaCl, technical grade', vendor: '', qty: '70 kg',
+        phaseId: ph.RT1, ordered: '2026-06-02', expected: '2026-06-26', status: 'ordered', notes: '' }
+    ],
+    activities: [
+      { id: uid(), title: 'Tank placement, plumbing & heater hookup', cat: 'Conditioning Setup', owner: '', due: '2026-06-30', status: 'pending', notes: 'After ENPAC delivery.', phaseId: ph.RT1 },
+      { id: uid(), title: 'ASTM C1293 prism molds — prep & verify', cat: 'Instrumentation', owner: '', due: '', status: 'active', notes: '', phaseId: ph.RT1 },
+      { id: uid(), title: 'UPV baseline readings (ASTM C597)', cat: 'Monitoring', owner: '', due: '', status: 'pending', notes: 'Companion cylinders + beams before conditioning.', phaseId: ph.RT1 },
+      { id: uid(), title: 'Batch 1 cylinder program (C39 / C469)', cat: 'Material Testing', owner: '', due: '', status: 'active', notes: '', phaseId: ph.RT1 }
+    ],
+    log: (() => {
+      const fmtT = (d) => d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+      const ev = (iso, msg) => ({ t: fmtT(new Date(iso)), ts: +new Date(iso), msg });
+      return [
+        ev('2026-06-09T14:40', 'Batch 1 (Mild) #5 beams cast — 6 beams + companions.'),
+        ev('2026-06-05T09:15', 'Jobe-Newman reactive fine aggregate delivered (6 CY).'),
+        ev('2026-06-02T11:05', 'NaOH + NaCl ordered for bath chemistry.'),
+        ev('2026-05-26T15:30', 'ENPAC 5550 conditioning tanks ordered — ETA Jun 19.'),
+        ev('2026-05-18T16:20', 'RT1 B1 #5 1.5" control — Cast complete.'),
+        ev('2026-05-11T10:05', 'RT1 B1 #5 1.5" control — Cage complete.'),
+        ev('2026-04-20T13:00', 'Jobe-Newman reactive fine aggregate ordered (6 CY).')
+      ];
+    })()
+  };
+}
+
+function normalizeState() {
+  state.passHash ??= DEFAULT_PASS_HASH;
+  state.weights = { ...DEFAULT_WEIGHTS, ...(state.weights || {}) };
+  state.series ??= []; state.orders ??= []; state.activities ??= []; state.log ??= [];
+  state.log.forEach((l) => { if (l.ts == null) l.ts = 0; });
+  if (!Array.isArray(state.phases) || !state.phases.length) {
+    state.phases = ['RT1', 'RT2', 'RT3', 'RT4'].map((n) => ({ id: uid(), name: n }));
+  }
+  const byName = {};
+  state.phases.forEach((p) => { byName[String(p.name).toUpperCase()] = p.id; });
+  const migrate = (item) => {
+    if (item.phaseId === undefined) {        /* migrate old task-string records */
+      const t = String(item.task || '').trim();
+      const key = t.toUpperCase();
+      if (t && key !== 'GENERAL') {
+        if (!byName[key]) {
+          const p = { id: uid(), name: t };
+          state.phases.push(p);
+          byName[key] = p.id;
+        }
+        item.phaseId = byName[key];
+      } else item.phaseId = '';
+      delete item.task;
+    }
+    if (item.phaseId && !state.phases.some((p) => p.id === item.phaseId)) item.phaseId = '';
+  };
+  state.series.forEach((sr) => {
+    migrate(sr);
+    sr.steps = { ...blankSteps(), ...(sr.steps || {}) };
+    sr.sev = { ...blankSev(), ...(sr.sev || {}) };
+    sr.actuals = sr.actuals || {};
+  });
+  state.orders.forEach(migrate);
+  state.activities.forEach(migrate);
+  if (phaseFilter !== 'all' && phaseFilter !== '__none' && !state.phases.some((p) => p.id === phaseFilter)) {
+    phaseFilter = 'all';
+  }
+}
+
+async function saveState() {
+  try {
+    await Store.save(JSON.stringify(state));
+    markSynced();
+  } catch (e) {
+    toast('SYNC FAILED — RETRY ACTION', 'bad');
+  }
+}
+
+function markSynced() {
+  const el = $('#syncStatus');
+  if (!el) return;
+  if (Store.mode === 'local') {
+    el.innerHTML = esc(Store.statusLabel());
+    el.classList.add('warn');
+  } else {
+    el.innerHTML = esc(Store.statusLabel()) +
+      '<span class="sync-time">' + esc(new Date().toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) + '</span>';
+    el.classList.remove('warn');
+  }
+}
+
+function pushLog(msg) {
+  state.log.unshift({ t: nowStamp(), ts: Date.now(), msg });
+  state.log = state.log.slice(0, 40);
+}
+
+function applyRemote(json) {
+  if (json === JSON.stringify(state)) return;
+  if (modalOpen) { pendingRemote = json; return; }   /* don't stomp open forms */
+  state = JSON.parse(json);
+  normalizeState();
+  render();
+  toast('BOARD UPDATED REMOTELY');
+}
+
+/* ----------------------------- PHASE HELPERS ----------------------------- */
+const phaseName = (id) => {
+  if (!id) return 'GEN';
+  const p = state.phases.find((x) => x.id === id);
+  return p ? p.name : '?';
+};
+const inScope = (item) => {
+  if (phaseFilter === 'all') return true;
+  if (phaseFilter === '__none') return !item.phaseId;
+  return item.phaseId === phaseFilter;
+};
+const fSeries = () => state.series.filter(inScope);
+const fOrders = () => state.orders.filter(inScope);
+const fActivities = () => state.activities.filter(inScope);
+function phaseOptions(selected, includeGeneral) {
+  let html = includeGeneral ? `<option value="" ${!selected ? 'selected' : ''}>General</option>` : '';
+  html += state.phases.map((p) =>
+    `<option value="${p.id}" ${selected === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  return html;
+}
+
+/* ----------------------------- COMPUTE ----------------------------- */
+const stepW = (id) => {
+  const v = Number(state.weights[id]);
+  return Number.isFinite(v) && v >= 0 ? v : 1;
+};
+const totalW = () => STEP_DEFS.reduce((a, s) => a + stepW(s.id), 0);
+
+function seriesPct(sr) {
+  const tw = totalW();
+  if (!tw) return 0;
+  const sum = STEP_DEFS.reduce((a, s) => a + stepW(s.id) * STATUS_VALUE[sr.steps[s.id] || 'pending'], 0);
+  return Math.round((sum / tw) * 100);
+}
+function stagePct(stepId) {
+  const list = fSeries();
+  if (!list.length) return 0;
+  const sum = list.reduce((a, sr) => a + STATUS_VALUE[sr.steps[stepId] || 'pending'], 0);
+  return Math.round((sum / list.length) * 100);
+}
+function overallPct() {
+  const list = fSeries();
+  if (!list.length) return 0;
+  return Math.round(list.reduce((a, sr) => a + seriesPct(sr), 0) / list.length);
+}
+function sevChips(sr) {
+  const parts = [];
+  ['csr', 'asr', 'ftc'].forEach((k) => {
+    const v = (sr.sev || {})[k] || 'N';
+    if (v !== 'N') parts.push(`<span class="tag sev sev-${esc(v.toLowerCase())}">${k.toUpperCase()} \u00B7 ${esc(SEV_LABEL[v])}</span>`);
+  });
+  return parts.length ? parts.join('') : '<span class="tag ctrl">CONTROL</span>';
+}
+function srLabel(sr) {
+  return `${esc(phaseName(sr.phaseId))}${sr.batch ? ' B' + esc(sr.batch) : ''} \u00B7 ${esc(sr.bar || '\u2014')} \u00B7 ${esc(sr.cover || '\u2014')}`;
+}
+function srLabelPlain(sr) {
+  const sevTxt = ['csr', 'asr', 'ftc'].filter((k) => (sr.sev || {})[k] !== 'N')
+    .map((k) => k.toUpperCase() + '-' + (sr.sev[k] || 'N')).join('/') || 'CONTROL';
+  return `${phaseName(sr.phaseId)}${sr.batch ? ' B' + sr.batch : ''} ${sr.bar || '-'} ${sr.cover || '-'} ${sevTxt}`;
+}
+/* Build a series' stage schedule. Completed stages with a recorded actual
+   completion date use that date (actual width); remaining stages are projected
+   forward from fixed durations (Condition from the expected window). Returns the
+   effective start/end plus per-stage segments flagged actual vs estimated. */
+function seriesSchedule(sr) {
+  const start = parseDay(sr.start);
+  const fixedSum = STEP_DEFS.reduce((a, st) => a + (STAGE_FIXED_DAYS[st.id] || 0), 0);
+  const expEnd = parseDay(sr.end);
+  const condEst = (start && expEnd) ? Math.max((expEnd - start) / DAY - fixedSum, 0.5) : 30;
+  const acts = sr.actuals || {};
+  let cursor = +start;
+  const segs = STEP_DEFS.map((st) => {
+    const status = sr.steps[st.id] || 'pending';
+    const ad = (status === 'done' && acts[st.id]) ? +parseDay(acts[st.id]) : null;
+    let endMs;
+    if (ad != null) {
+      endMs = Math.max(ad, cursor + 0.25 * DAY);   /* keep stages forward-ordered */
+    } else {
+      const estDays = st.id === 'condition' ? condEst : (STAGE_FIXED_DAYS[st.id] || 1);
+      endMs = cursor + estDays * DAY;
+    }
+    const seg = {
+      id: st.id, name: st.name, status,
+      days: Math.max((endMs - cursor) / DAY, 0.25),
+      actual: ad != null,
+      date: ad != null ? acts[st.id] : null
+    };
+    cursor = endMs;
+    return seg;
+  });
+  return { start, end: new Date(cursor), segs };
+}
+function orderEta(o) {
+  if (o.status === 'delivered') return { cls: 'in', txt: 'DELIVERED' };
+  const exp = parseDay(o.expected);
+  if (!exp) return { cls: '', txt: 'NO ETA' };
+  const days = Math.ceil((exp - Date.now()) / DAY);
+  if (days < 0) return { cls: 'late', txt: 'OVERDUE ' + Math.abs(days) + 'D' };
+  if (days <= 14) return { cls: 'soon', txt: 'T\u2212' + days + 'D' };
+  return { cls: '', txt: 'T\u2212' + days + 'D' };
+}
+
+/* ----------------------------- RENDER ----------------------------- */
+function render() {
+  const pct = overallPct();
+  const C = 2 * Math.PI * 27;
+  $('#ringArc').style.strokeDashoffset = String(C * (1 - pct / 100));
+  $('#ringPct').textContent = pct + '%';
+  const lb = $('#lockBtn');
+  lb.innerHTML = editMode ? '\u26A1 EDIT MODE \u00B7 MENU' : '\u26BF UNLOCK EDIT';
+  lb.classList.toggle('unlocked', editMode);
+  $$('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === currentTab));
+  renderPhasebar();
+
+  const v = $('#view');
+  v.classList.remove('vin');
+  if (currentTab === 'overview') v.innerHTML = renderOverview();
+  else if (currentTab === 'matrix') v.innerHTML = renderMatrix();
+  else if (currentTab === 'timeline') v.innerHTML = renderTimeline();
+  else if (currentTab === 'orders') v.innerHTML = renderOrders();
+  else v.innerHTML = renderActivities();
+  void v.offsetWidth;            /* restart the view-entrance animation */
+  v.classList.add('vin');
+  tweenCounts();
+}
+
+/* Count-up animation for KPI numbers */
+function tweenCounts() {
+  if (reducedMotion()) return;
+  $$('.kpi b').forEach((el) => {
+    const n = parseInt(el.textContent, 10);
+    if (!Number.isFinite(n) || n === 0) return;
+    const t0 = performance.now();
+    const dur = 650;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur);
+      el.textContent = String(Math.round(n * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function renderPhasebar() {
+  const hasUnassigned = [...state.series, ...state.orders, ...state.activities].some((x) => !x.phaseId);
+  const PHASE_TIP = { RT1: 'CSR · ASR', RT2: 'CSR · FTC', RT3: 'ASR · FTC', RT4: 'CSR · ASR · FTC' };
+  const tipFor = (name) => PHASE_TIP[String(name).trim().toUpperCase()] || '';
+  let html = `<span class="plabel">PHASE</span>
+    <button class="chip ${phaseFilter === 'all' ? 'on' : ''}" data-action="phase" data-phase="all">All</button>`;
+  html += state.phases.map((p) => {
+    const tip = tipFor(p.name);
+    return `<button class="chip ${phaseFilter === p.id ? 'on' : ''}" data-action="phase" data-phase="${p.id}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(p.name)}</button>`;
+  }).join('');
+  if (hasUnassigned) {
+    html += `<button class="chip ${phaseFilter === '__none' ? 'on' : ''}" data-action="phase" data-phase="__none">Unassigned</button>`;
+  }
+  if (editMode) html += `<button class="chip ghost" data-action="phases-modal">+ Manage Phases</button>`;
+  $('#phasebar').innerHTML = html;
+}
+
+function renderPipeline() {
+  const stages = STEP_DEFS.map((s, i) => {
+    const p = stagePct(s.id);
+    const band = p >= 100 ? 'hi' : p > 0 ? 'mid' : 'lo';
+    return `<div class="stage ${lensStep === s.id ? 'sel' : ''}" data-band="${band}" data-action="lens" data-step="${s.id}"
+      style="--i:${i}" role="button" tabindex="0" title="Click to see series at this step">
+      <div class="s-name">${s.name}</div>
+      <div class="s-pct">${p}%</div>
+      <div class="s-bar"><div class="s-fill" style="width:${p}%"></div></div>
+    </div>`;
+  }).join('');
+
+  let lens = '';
+  if (lensStep) {
+    const def = STEP_DEFS.find((s) => s.id === lensStep);
+    const cols = STATUS_ORDER.slice().reverse().map((st) => {
+      const items = fSeries().filter((sr) => (sr.steps[lensStep] || 'pending') === st);
+      const list = items.length
+        ? items.map((sr) => `<div>${srLabel(sr)} ${sevChips(sr)}</div>`).join('')
+        : '<div class="none">none</div>';
+      return `<div class="lens-col ${st}"><h4>${STATUS_LABEL[st]} (${items.length})</h4>${list}</div>`;
+    }).join('');
+    lens = `<div class="lens"><h3>LENS \u2014 ${def.name.toUpperCase()} \u00B7 WEIGHT \u00D7${stepW(lensStep)}</h3>
+      <div class="lens-cols">${cols}</div></div>`;
+  }
+  return `<div class="pipeline">${stages}</div>${lens}`;
+}
+
+function renderOverview() {
+  const ords = fOrders();
+  const soon = ords.filter((o) => orderEta(o).cls === 'soon').length;
+  const late = ords.filter((o) => orderEta(o).cls === 'late').length;
+  const cnt = (st) => fActivities().filter((a) => a.status === st).length
+    + fSeries().reduce((n, sr) => n + STEP_DEFS.filter((s) => sr.steps[s.id] === st).length, 0);
+  const feedPreview = 4;
+  const feed = state.log.length
+    ? state.log.slice(0, feedPreview).map((l) =>
+        `<div><time>${esc(l.t)}</time>${esc(l.msg)}</div>`).join('')
+    : '<div class="empty">No activity yet.</div>';
+
+  return `
+    <div class="kpis">
+      <div class="kpi total" style="--d:0ms"><b>${fSeries().length}</b><small>Series Tracked</small></div>
+      <div class="kpi done" style="--d:50ms"><b>${cnt('done')}</b><small>Items Done</small></div>
+      <div class="kpi active" style="--d:100ms"><b>${cnt('active')}</b><small>In Progress</small></div>
+      <div class="kpi pending" style="--d:150ms"><b>${cnt('pending')}</b><small>Not Started</small></div>
+      <div class="kpi ${late ? 'alert' : 'active'}" style="--d:200ms"><b>${late ? late : soon}</b><small>${late ? 'Orders Overdue' : 'Arriving \u226414 Days'}</small></div>
+    </div>
+    <div class="panel corners" style="--d:120ms"><span class="c"></span>
+      <div class="panel-title">Process Pipeline \u2014 click a step to inspect</div>
+      ${renderPipeline()}
+    </div>
+    <div class="panel corners" style="--d:240ms"><span class="c"></span>
+      <div class="panel-title feed-head" ${state.log.length ? 'data-action="feed-detail" role="button" tabindex="0"' : ''}>Activity Feed${state.log.length ? '<span class="feed-open">View All \u2197</span>' : ''}</div>
+      <div class="feed">${feed}</div>
+    </div>`;
+}
+
+function renderMatrix() {
+  const addBtn = editMode ? `<button class="btn-go" data-action="series-modal">+ Add Series</button>` : '';
+  const list = fSeries();
+  if (!list.length) {
+    return `<div class="panel corners"><span class="c"></span>
+      <div class="panel-title">Series \u00D7 Process Matrix <span class="right">${addBtn}</span></div>
+      <div class="empty">No series in this phase yet.<br>${editMode ? 'Add a series above.' : 'Unlock edit mode to add series.'}</div></div>`;
+  }
+  const rows = list.map((sr, i) => {
+    const cells = STEP_DEFS.map((s) => {
+      const st = sr.steps[s.id] || 'pending';
+      return `<td><button class="cell-chip ${st}" data-action="cycle-step" data-series="${sr.id}" data-step="${s.id}"
+        title="${editMode ? 'Click to cycle status' : 'Unlock edit mode to change'}">${STATUS_LABEL[st]}</button></td>`;
+    }).join('');
+    const p = seriesPct(sr);
+    const actions = editMode
+      ? `<td><button class="icon-btn" data-action="series-modal" data-id="${sr.id}" title="Edit">&#9998;</button>
+         <button class="icon-btn danger" data-action="confirm-delete" data-kind="series" data-id="${sr.id}" title="Delete">&#10005;</button></td>`
+      : '<td></td>';
+    return `<tr style="--d:${Math.min(i * 40, 400)}ms">
+      <td><div class="series-id">${srLabel(sr)}</div>
+          <div class="series-tags">${sevChips(sr)}${sr.beams ? `<span class="tag">${esc(sr.beams)} BEAMS</span>` : ''}</div></td>
+      ${cells}
+      <td class="row-pct"><span class="mini"><i style="width:${p}%"></i></span>${p}%</td>
+      ${actions}</tr>`;
+  }).join('');
+
+  return `<div class="panel corners ${editMode ? 'editable' : ''}"><span class="c"></span>
+    <div class="panel-title">Series \u00D7 Process Matrix
+      <span class="right">${editMode ? '<button class="btn-ghost" data-action="manage-weights">Weights</button>' : ''}${addBtn}</span></div>
+    <div class="table-scroll"><table class="matrix">
+      <thead><tr><th>Series</th>${STEP_DEFS.map((s) => `<th>${s.name}</th>`).join('')}<th>Weighted</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div>`;
+}
+
+function renderTimeline() {
+  const list = fSeries();
+  const dated = list.filter((sr) => sr.start && sr.end);
+  if (!dated.length) {
+    return `<div class="panel corners"><span class="c"></span>
+      <div class="panel-title">Series Timeline</div>
+      <div class="empty">No series in this phase have start / expected-end dates yet.<br>Edit a series (pencil icon in the Series Matrix) to set its dates and it appears here as a Gantt bar.</div></div>`;
+  }
+  const schedById = {};
+  dated.forEach((sr) => { schedById[sr.id] = seriesSchedule(sr); });
+  const PAD = 15 * DAY;
+  const min = Math.min(...dated.map((sr) => +schedById[sr.id].start)) - PAD;
+  const max = Math.max(...dated.map((sr) => +schedById[sr.id].end)) + PAD;
+  const range = Math.max(max - min, DAY);
+  const today = Date.now();
+  const todayPct = Math.min(100, Math.max(0, ((today - min) / range) * 100));
+  const fmt = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
+
+  const rows = list.map((sr, i) => {
+    const d = Math.min(i * 50, 450) + 'ms';
+    let track;
+    if (sr.start && sr.end) {
+      const sched = schedById[sr.id];
+      const sMs = +sched.start, eMs = +sched.end;
+      const left = Math.max(0, ((sMs - min) / range) * 100);
+      const width = Math.max(0.5, ((eMs - sMs) / range) * 100);
+      const p = seriesPct(sr);
+      const expEnd = +parseDay(sr.end);
+      const overdue = today > expEnd && p < 100;
+      const segs = sched.segs.map((seg) => {
+        const tip = `${seg.name} \u2014 ${STATUS_LABEL[seg.status]}` + (seg.actual ? ` (done ${seg.date})` : ' (projected)');
+        return `<div class="g-seg ${seg.status}${seg.actual ? '' : ' est'}" style="flex:${seg.days} 0 0" title="${esc(tip)}"></div>`;
+      }).join('');
+      track = `<div class="g-track">
+        <div class="g-bar ${overdue ? 'overdue' : ''}" style="left:${left}%; width:${width}%; --d:${d}">
+          ${segs}<span class="g-pct">${p}%</span>
+        </div></div>`;
+    } else {
+      track = `<div class="g-track"><span class="g-nodates" style="position:absolute; left:8px; top:4px;">SET START / END DATES</span></div>`;
+    }
+    return `<div class="g-row" style="--d:${d}">
+      <div class="g-label"><div class="series-id">${srLabel(sr)}</div>
+        <div class="series-tags">${sevChips(sr)}</div></div>
+      ${track}</div>`;
+  }).join('');
+
+  return `<div class="panel corners"><span class="c"></span>
+    <div class="panel-title">Series Timeline \u2014 Gantt</div>
+    <div class="table-scroll"><div class="g-wrap">
+      <div class="g-axis"><span>${fmt(min)}</span><span class="t">TODAY \u00B7 ${fmt(today)}</span><span>${fmt(max)}</span></div>
+      <div class="g-rows">${rows}<div class="today-line" style="left:calc(var(--glabel) + 14px + (100% - var(--glabel) - 14px) * ${(todayPct / 100).toFixed(4)})"></div></div>
+      <div class="g-legend">
+        <span class="seq">STAGES L\u2192R: CAGE \u00B7 FORMWORK \u00B7 CAST \u00B7 CURE \u00B7 CONDITION \u00B7 TEST</span>
+        <span class="lg done">Done (actual)</span><span class="lg active">In Progress</span><span class="lg pending">Not Started</span>
+        <span class="seq">HATCHED = PROJECTED &middot; HOVER A SEGMENT FOR ITS DATE</span>
+      </div>
+    </div></div></div>`;
+}
+
+function renderOrders() {
+  const addBtn = editMode ? `<button class="btn-go" data-action="order-modal">+ Log Order</button>` : '';
+  const ords = fOrders();
+  const soon = ords.filter((o) => orderEta(o).cls === 'soon').length;
+  const late = ords.filter((o) => orderEta(o).cls === 'late').length;
+  const transit = ords.filter((o) => o.status === 'transit').length;
+  const delivered = ords.filter((o) => o.status === 'delivered').length;
+
+  const sorted = ords.slice().sort((a, b) => {
+    const rank = (o) => (o.status === 'delivered' ? 2 : orderEta(o).cls === 'late' ? 0 : 1);
+    const r = rank(a) - rank(b);
+    return r !== 0 ? r : String(a.expected).localeCompare(String(b.expected));
+  });
+
+  const cards = sorted.length ? sorted.map((o, i) => {
+    const eta = orderEta(o);
+    const actions = editMode
+      ? `<button class="icon-btn" data-action="order-modal" data-id="${o.id}" title="Edit">&#9998;</button>
+         <button class="icon-btn danger" data-action="confirm-delete" data-kind="order" data-id="${o.id}" title="Delete">&#10005;</button>` : '';
+    return `<div class="order ${editMode ? 'editable' : ''}" data-st="${o.status}" style="--d:${Math.min(i * 40, 400)}ms">
+      <div>
+        <div class="o-title">${esc(o.item)}</div>
+        <div class="o-meta">${o.vendor ? esc(o.vendor) + ' \u00B7 ' : ''}${o.qty ? esc(o.qty) + ' \u00B7 ' : ''}${esc(phaseName(o.phaseId))}${o.ordered ? ' \u00B7 ORDERED ' + esc(o.ordered) : ''}${o.expected ? ' \u00B7 ETA ' + esc(o.expected) : ''}</div>
+      </div>
+      <div class="o-right">
+        <span class="eta ${eta.cls}">${eta.txt}</span>
+        <button class="cell-chip ${o.status}" data-action="cycle-order" data-id="${o.id}"
+          title="${editMode ? 'Click to cycle status' : 'Unlock edit mode to change'}">${ORDER_LABEL[o.status]}</button>
+        ${actions}
+      </div>
+      ${o.notes ? `<div class="o-notes">${esc(o.notes)}</div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty">No orders in this phase yet.<br>${editMode ? 'Log the first order above.' : 'Unlock edit mode to log orders.'}</div>`;
+
+  return `<div class="panel corners"><span class="c"></span>
+    <div class="panel-title">Materials &amp; Orders <span class="right">${addBtn}</span></div>
+    <div class="radar">
+      <span class="rchip late" style="--d:0ms"><b>${late}</b>OVERDUE</span>
+      <span class="rchip soon" style="--d:60ms"><b>${soon}</b>ARRIVING \u226414D</span>
+      <span class="rchip" style="--d:120ms"><b style="color:var(--amber)">${transit}</b>IN TRANSIT</span>
+      <span class="rchip in" style="--d:180ms"><b>${delivered}</b>DELIVERED</span>
+    </div>
+    ${cards}</div>`;
+}
+
+function renderActivities() {
+  const addBtn = editMode ? `<button class="btn-go" data-action="activity-modal">+ Add Activity</button>` : '';
+  const filters = ['all', 'pending', 'active', 'done'].map((f) =>
+    `<button class="chip ${activityFilter === f ? 'on' : ''}" data-action="filter" data-filter="${f}">${f === 'all' ? 'All' : STATUS_LABEL[f]}</button>`
+  ).join('');
+  const list = fActivities().filter((a) => activityFilter === 'all' || a.status === activityFilter);
+  const cards = list.length ? list.map((a, i) => {
+    const actions = editMode
+      ? `<button class="icon-btn" data-action="activity-modal" data-id="${a.id}" title="Edit">&#9998;</button>
+         <button class="icon-btn danger" data-action="confirm-delete" data-kind="activity" data-id="${a.id}" title="Delete">&#10005;</button>` : '';
+    return `<div class="act ${editMode ? 'editable' : ''}" data-st="${a.status}" style="--d:${Math.min(i * 40, 400)}ms">
+      <div>
+        <div class="a-title">${esc(a.title)}</div>
+        <div class="a-meta"><span class="cat">${esc(a.cat || 'GENERAL')}</span> \u00B7 ${esc(phaseName(a.phaseId))}${a.owner ? ' \u00B7 ' + esc(a.owner) : ''}${a.due ? ' \u00B7 DUE ' + esc(a.due) : ''}</div>
+      </div>
+      <div class="a-right">
+        <button class="cell-chip ${a.status}" data-action="cycle-activity" data-id="${a.id}"
+          title="${editMode ? 'Click to cycle status' : 'Unlock edit mode to change'}">${STATUS_LABEL[a.status]}</button>
+        ${actions}
+      </div>
+      ${a.notes ? `<div class="a-notes">${esc(a.notes)}</div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty">No activities ${activityFilter === 'all' ? 'in this phase' : 'with this status'} yet.<br>${editMode ? 'Add one above.' : 'Unlock edit mode to add activities.'}</div>`;
+
+  return `<div class="panel corners"><span class="c"></span>
+    <div class="panel-title">Fabrication Activities <span class="right">${addBtn}</span></div>
+    <div class="filters">${filters}</div>
+    ${cards}</div>`;
+}
+
+/* ----------------------------- ACTIONS ----------------------------- */
+function requireEdit() {
+  if (!editMode) { toast('BOARD LOCKED \u2014 UNLOCK EDIT MODE FIRST', 'warn'); return false; }
+  if (Store.mode === 'local') toast('LOCAL PREVIEW \u2014 CHANGES WILL NOT BE SAVED', 'warn');
+  return true;
+}
+const nextOf = (arr, v) => arr[(arr.indexOf(v) + 1) % arr.length];
+
+async function cycleStep(seriesId, stepId) {
+  if (!requireEdit()) return;
+  const sr = state.series.find((s) => s.id === seriesId);
+  if (!sr) return;
+  const cur = sr.steps[stepId] || 'pending';
+  const next = nextOf(STATUS_ORDER, cur);
+  if (next === 'done') {
+    openStageDateModal(seriesId, stepId);   /* records the date, then marks Done */
+    return;
+  }
+  sr.steps[stepId] = next;
+  if (cur === 'done' && sr.actuals) delete sr.actuals[stepId];   /* leaving Done clears the date */
+  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 ${STATUS_LABEL[next]}`);
+  render();
+  await saveState();
+}
+
+function openStageDateModal(seriesId, stepId) {
+  const sr = state.series.find((s) => s.id === seriesId);
+  if (!sr) return;
+  const stage = STEP_DEFS.find((s) => s.id === stepId);
+  const preset = (sr.actuals && sr.actuals[stepId]) || todayISO();
+  openModal(`<h2>${stage.name} Complete</h2>
+    <div class="field"><label>Actual Completion Date</label>
+      <input type="date" id="stageDate" value="${esc(preset)}"></div>
+    <div class="err" id="stageDateErr">A DATE IS REQUIRED</div>
+    <div class="note">Recorded as the actual ${stage.name.toLowerCase()} completion date for
+    ${esc(srLabel(sr))}. The Timeline bar redraws this stage to the recorded date.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-stage-date" data-series="${seriesId}" data-step="${stepId}">Mark Done</button>
+    </div>`);
+}
+async function saveStageDate(seriesId, stepId) {
+  const sr = state.series.find((s) => s.id === seriesId);
+  if (!sr) { closeModal(); return; }
+  const d = $('#stageDate').value;
+  if (!d) { $('#stageDateErr').style.display = 'block'; return; }
+  sr.steps[stepId] = 'done';
+  sr.actuals = sr.actuals || {};
+  sr.actuals[stepId] = d;
+  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 Done (${d})`);
+  closeModal();
+  render();
+  await saveState();
+  toast('STAGE DATE RECORDED');
+}
+async function cycleActivity(id) {
+  if (!requireEdit()) return;
+  const a = state.activities.find((x) => x.id === id);
+  if (!a) return;
+  a.status = nextOf(STATUS_ORDER, a.status);
+  pushLog(`Activity "${a.title}" \u2192 ${STATUS_LABEL[a.status]}`);
+  render();
+  await saveState();
+}
+async function cycleOrder(id) {
+  if (!requireEdit()) return;
+  const o = state.orders.find((x) => x.id === id);
+  if (!o) return;
+  o.status = nextOf(ORDER_ORDER, o.status);
+  pushLog(`Order "${o.item}" \u2192 ${ORDER_LABEL[o.status]}`);
+  render();
+  await saveState();
+}
+
+/* ----------------------------- MODALS ----------------------------- */
+function openModal(html) {
+  modalOpen = true;
+  const box = $('#modalBox');
+  box.innerHTML = '<span class="c"></span>' + html;
+  $('#overlay').classList.add('show');
+  const first = box.querySelector('input, select, textarea');
+  if (first) first.focus();
+}
+function closeModal() {
+  modalOpen = false;
+  $('#overlay').classList.remove('show');
+  if (pendingRemote) { const j = pendingRemote; pendingRemote = null; applyRemote(j); }
+}
+$('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalOpen) closeModal();
+  if (e.key === 'Enter' && modalOpen && e.target && e.target.id === 'passInput') tryUnlock();
+});
+
+function openFeedDetail() {
+  const items = state.log.slice();
+  const list = items.length
+    ? items.map((l) => `<div class="fd-row"><time>${esc(l.t)}</time>${esc(l.msg)}</div>`).join('')
+    : '<div class="empty">No activity recorded yet.</div>';
+  openModal(`<h2>Activity Log</h2>
+    <div class="note" style="margin-top:0">All activity recorded to date \u2014 ${items.length} ${items.length === 1 ? 'entry' : 'entries'}, newest first.</div>
+    <div class="fd-list">${list}</div>
+    <div class="modal-actions"><button class="btn-go" data-action="close-modal">Close</button></div>`);
+}
+
+function openLockMenu() {
+  if (editMode) {
+    openModal(`<h2>Edit Menu</h2>
+      <div class="note">You are in edit mode for this session.</div>
+      <div class="modal-actions">
+        <button class="btn-ghost" data-action="phases-modal">Phases</button>
+        <button class="btn-ghost" data-action="manage-weights">Step Weights</button>
+        <button class="btn-ghost" data-action="passcode-change">Change Passcode</button>
+        <button class="btn-go" data-action="lock-board">Lock Board</button>
+      </div>`);
+    return;
+  }
+  openModal(`<h2>Unlock Edit Mode</h2>
+    <div class="field"><label>Passcode</label><input type="password" id="passInput" autocomplete="off"></div>
+    <div class="err" id="passErr"></div>
+    <div class="note">Edit access is gated by a SHA-256-hashed passcode. This is a client-side
+    convenience lock for lab coordination, not a security boundary.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="try-unlock">Unlock</button>
+    </div>`);
+}
+async function tryUnlock() {
+  const input = $('#passInput');
+  const err = $('#passErr');
+  try {
+    const h = await sha256Hex(input ? input.value : '');
+    if (h === state.passHash) {
+      editMode = true;
+      closeModal();
+      render();
+      toast('EDIT MODE ENABLED');
+    } else {
+      err.textContent = 'INCORRECT PASSCODE';
+      err.style.display = 'block';
+    }
+  } catch (e) {
+    err.textContent = 'UNLOCK ERROR: ' + (e && e.message ? e.message : 'HASHING FAILED');
+    err.style.display = 'block';
+  }
+}
+function lockBoard() {
+  editMode = false;
+  closeModal();
+  render();
+  toast('BOARD LOCKED');
+}
+function openPasscodeChange() {
+  openModal(`<h2>Change Passcode</h2>
+    <div class="field"><label>New Passcode</label><input type="password" id="np1" autocomplete="off"></div>
+    <div class="field"><label>Confirm</label><input type="password" id="np2" autocomplete="off"></div>
+    <div class="err" id="npErr">PASSCODES DO NOT MATCH OR ARE EMPTY</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-passcode">Save</button>
+    </div>`);
+}
+async function savePasscode() {
+  const a = $('#np1').value, b = $('#np2').value;
+  if (!a || a !== b) { $('#npErr').style.display = 'block'; return; }
+  state.passHash = await sha256Hex(a);
+  pushLog('Edit passcode was changed.');
+  await saveState();
+  closeModal();
+  toast('PASSCODE UPDATED');
+}
+
+/* --- phases --- */
+function openPhasesModal() {
+  if (!requireEdit()) return;
+  const rows = state.phases.map((p) => `
+    <div class="ph-row" data-phid="${p.id}">
+      <input maxlength="30" value="${esc(p.name)}">
+      <button class="icon-btn danger" data-action="ph-del" title="Delete phase">&#10005;</button>
+    </div>`).join('');
+  openModal(`<h2>Manage Phases</h2>
+    ${rows}
+    <div class="field" style="margin-top:14px"><label>Add Phase</label>
+      <input id="phNew" maxlength="30" placeholder="e.g. RT2 \u2014 CSR + FTC"></div>
+    <div class="note">Deleting a phase does NOT delete its series / activities / orders \u2014
+    they become Unassigned and can be re-assigned by editing each item.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-phases">Save Phases</button>
+    </div>`);
+}
+async function savePhases() {
+  const removedIds = [];
+  const next = [];
+  $$('#modalBox .ph-row').forEach((row) => {
+    const id = row.dataset.phid;
+    if (row.dataset.deleted === '1') { removedIds.push(id); return; }
+    const old = state.phases.find((p) => p.id === id);
+    const name = row.querySelector('input').value.trim().slice(0, 30);
+    next.push({ id, name: name || (old ? old.name : 'Phase') });
+  });
+  const newName = $('#phNew').value.trim().slice(0, 30);
+  if (newName) next.push({ id: uid(), name: newName });
+  if (!next.length) { toast('AT LEAST ONE PHASE IS REQUIRED', 'warn'); return; }
+  state.phases = next;
+  if (removedIds.length) {
+    [...state.series, ...state.orders, ...state.activities].forEach((item) => {
+      if (removedIds.includes(item.phaseId)) item.phaseId = '';
+    });
+    if (removedIds.includes(phaseFilter)) phaseFilter = 'all';
+  }
+  pushLog('Phases updated: ' + state.phases.map((p) => p.name).join(', '));
+  await saveState();
+  closeModal();
+  render();
+  toast('PHASES SAVED');
+}
+
+/* --- step weights --- */
+function openWeightsModal() {
+  if (!requireEdit()) return;
+  const rows = STEP_DEFS.map((s) => `
+    <div class="field"><label>${s.name}</label>
+      <input type="number" min="0" step="0.5" id="w_${s.id}" value="${stepW(s.id)}"></div>`).join('');
+  openModal(`<h2>Step Weights</h2>
+    <div class="field-row3">${rows}</div>
+    <div class="note">Series % = \u03A3(weight \u00D7 step score) \u00F7 \u03A3 weights, where done = 1, in progress = 0.5,
+    not started = 0. Weights are relative \u2014 they need not sum to anything. 0 removes a step from the score.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-weights">Save Weights</button>
+    </div>`);
+}
+async function saveWeights() {
+  STEP_DEFS.forEach((s) => {
+    const v = parseFloat($('#w_' + s.id).value);
+    state.weights[s.id] = Number.isFinite(v) && v >= 0 ? v : 1;
+  });
+  pushLog('Step weights updated: ' + STEP_DEFS.map((s) => `${s.name} \u00D7${state.weights[s.id]}`).join(', '));
+  closeModal();
+  render();
+  await saveState();
+  toast('WEIGHTS SAVED');
+}
+
+/* --- series add/edit --- */
+function openSeriesModal(id) {
+  if (!requireEdit()) return;
+  const sr = id ? state.series.find((s) => s.id === id) : null;
+  const defPhase = sr ? sr.phaseId
+    : (phaseFilter !== 'all' && phaseFilter !== '__none') ? phaseFilter : (state.phases[0] || {}).id || '';
+  openModal(`<h2>${sr ? 'Edit Series' : 'Add Series'}</h2>
+    <div class="field-row3">
+      <div class="field"><label>Phase</label><select id="fPhase">${phaseOptions(defPhase, true)}</select></div>
+      <div class="field"><label>Batch</label>
+        <input type="number" id="fBatch" min="0" max="99" value="${sr ? Number(sr.batch) || 0 : 1}"></div>
+      <div class="field"><label>Beams</label>
+        <input type="number" id="fBeams" min="0" max="99" value="${sr ? Number(sr.beams) || 0 : 2}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Bar Size</label><input id="fBar" maxlength="8" placeholder="#5" value="${sr ? esc(sr.bar) : ''}"></div>
+      <div class="field"><label>Cover</label><select id="fCover">${(sr && sr.cover && !COVER_OPTIONS.includes(sr.cover) ? [sr.cover, ...COVER_OPTIONS] : COVER_OPTIONS).map((v) => `<option value="${esc(v)}" ${(sr ? sr.cover : '') === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row3">
+      <div class="field"><label>CSR</label><select id="fCsr">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.csr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>ASR</label><select id="fAsr">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.asr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>FTC</label><select id="fFtc">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.ftc : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Start</label><input type="date" id="fStart" value="${sr ? esc(sr.start || '') : ''}"></div>
+      <div class="field"><label>Expected End</label><input type="date" id="fEnd" value="${sr ? esc(sr.end || '') : ''}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-series" data-id="${id || ''}">${sr ? 'Save Changes' : 'Add Series'}</button>
+    </div>`);
+}
+async function saveSeries(id) {
+  const data = {
+    phaseId: $('#fPhase').value, batch: Math.max(0, parseInt($('#fBatch').value, 10) || 0),
+    bar: $('#fBar').value.trim().slice(0, 8), cover: $('#fCover').value,
+    sev: { csr: $('#fCsr').value, asr: $('#fAsr').value, ftc: $('#fFtc').value },
+    beams: Math.max(0, parseInt($('#fBeams').value, 10) || 0),
+    start: $('#fStart').value, end: $('#fEnd').value
+  };
+  if (id) {
+    const sr = state.series.find((s) => s.id === id);
+    if (!sr) { closeModal(); return; }
+    Object.assign(sr, data);
+    pushLog('Series updated: ' + srLabelPlain(sr));
+  } else {
+    const sr = { id: uid(), ...data, steps: blankSteps() };
+    state.series.push(sr);
+    pushLog('Series added: ' + srLabelPlain(sr));
+  }
+  closeModal();
+  render();
+  await saveState();
+  toast(id ? 'SERIES UPDATED' : 'SERIES ADDED');
+}
+
+/* --- order add/edit --- */
+function openOrderModal(id) {
+  if (!requireEdit()) return;
+  const o = id ? state.orders.find((x) => x.id === id) : null;
+  const defPhase = o ? o.phaseId
+    : (phaseFilter !== 'all' && phaseFilter !== '__none') ? phaseFilter : '';
+  openModal(`<h2>${o ? 'Edit Order' : 'Log Order'}</h2>
+    <div class="field"><label>Item</label>
+      <input id="fItem" maxlength="120" placeholder="e.g. NaOH pellets, 45 kg" value="${o ? esc(o.item) : ''}"></div>
+    <div class="field-row">
+      <div class="field"><label>Vendor</label><input id="fVendor" maxlength="60" value="${o ? esc(o.vendor) : ''}"></div>
+      <div class="field"><label>Quantity</label><input id="fQty" maxlength="30" placeholder="e.g. 2 EA" value="${o ? esc(o.qty) : ''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Feeds Phase</label><select id="fOPhase">${phaseOptions(defPhase, true)}</select></div>
+      <div class="field"><label>Status</label>
+        <select id="fOStatus">${ORDER_ORDER.map((s) =>
+          `<option value="${s}" ${o && o.status === s ? 'selected' : ''}>${ORDER_LABEL[s]}</option>`).join('')}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Order Date</label><input type="date" id="fOrdered" value="${o ? esc(o.ordered) : ''}"></div>
+      <div class="field"><label>Expected Delivery</label><input type="date" id="fExpected" value="${o ? esc(o.expected) : ''}"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="fONotes" maxlength="400">${o ? esc(o.notes) : ''}</textarea></div>
+    <div class="err" id="fErr">ITEM NAME IS REQUIRED</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-order" data-id="${id || ''}">${o ? 'Save Changes' : 'Log Order'}</button>
+    </div>`);
+}
+async function saveOrder(id) {
+  const item = $('#fItem').value.trim();
+  if (!item) { $('#fErr').style.display = 'block'; return; }
+  const data = {
+    item: item.slice(0, 120), vendor: $('#fVendor').value.trim(), qty: $('#fQty').value.trim(),
+    phaseId: $('#fOPhase').value, status: $('#fOStatus').value,
+    ordered: $('#fOrdered').value, expected: $('#fExpected').value, notes: $('#fONotes').value.trim()
+  };
+  if (id) {
+    const o = state.orders.find((x) => x.id === id);
+    if (!o) { closeModal(); return; }
+    Object.assign(o, data);
+    pushLog(`Order updated: "${item}"`);
+  } else {
+    state.orders.unshift({ id: uid(), ...data });
+    pushLog(`Order logged: "${item}"`);
+  }
+  closeModal();
+  render();
+  await saveState();
+  toast(id ? 'ORDER UPDATED' : 'ORDER LOGGED');
+}
+
+/* --- activity add/edit --- */
+function openActivityModal(id) {
+  if (!requireEdit()) return;
+  const a = id ? state.activities.find((x) => x.id === id) : null;
+  const defPhase = a ? a.phaseId
+    : (phaseFilter !== 'all' && phaseFilter !== '__none') ? phaseFilter : '';
+  openModal(`<h2>${a ? 'Edit Activity' : 'Add Activity'}</h2>
+    <div class="field"><label>Activity</label>
+      <input id="fTitle" maxlength="120" placeholder="e.g. Batch 2 cast \u2014 Tank 1 series" value="${a ? esc(a.title) : ''}"></div>
+    <div class="field-row">
+      <div class="field"><label>Phase</label><select id="fAPhase">${phaseOptions(defPhase, true)}</select></div>
+      <div class="field"><label>Category</label>
+        <input id="fCat" maxlength="40" placeholder="Casting, Monitoring\u2026" value="${a ? esc(a.cat) : ''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Owner</label>
+        <input id="fOwner" maxlength="40" placeholder="Optional" value="${a ? esc(a.owner) : ''}"></div>
+      <div class="field"><label>Due</label><input type="date" id="fDue" value="${a ? esc(a.due) : ''}"></div>
+    </div>
+    <div class="field"><label>Status</label>
+      <select id="fStatus">${STATUS_ORDER.map((s) =>
+        `<option value="${s}" ${a && a.status === s ? 'selected' : ''}>${STATUS_LABEL[s]}</option>`).join('')}</select></div>
+    <div class="field"><label>Notes</label><textarea id="fNotes" maxlength="400">${a ? esc(a.notes) : ''}</textarea></div>
+    <div class="err" id="fErr">ACTIVITY NAME IS REQUIRED</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-activity" data-id="${id || ''}">${a ? 'Save Changes' : 'Add Activity'}</button>
+    </div>`);
+}
+async function saveActivity(id) {
+  const title = $('#fTitle').value.trim();
+  if (!title) { $('#fErr').style.display = 'block'; return; }
+  const data = {
+    title: title.slice(0, 120), phaseId: $('#fAPhase').value,
+    cat: $('#fCat').value.trim(), owner: $('#fOwner').value.trim(),
+    due: $('#fDue').value, status: $('#fStatus').value, notes: $('#fNotes').value.trim()
+  };
+  if (id) {
+    const a = state.activities.find((x) => x.id === id);
+    if (!a) { closeModal(); return; }
+    Object.assign(a, data);
+    pushLog(`Activity updated: "${title}"`);
+  } else {
+    state.activities.unshift({ id: uid(), ...data });
+    pushLog(`Activity added: "${title}"`);
+  }
+  closeModal();
+  render();
+  await saveState();
+  toast(id ? 'ACTIVITY UPDATED' : 'ACTIVITY ADDED');
+}
+
+/* --- delete confirm --- */
+function findItem(kind, id) {
+  if (kind === 'series') return state.series.find((x) => x.id === id);
+  if (kind === 'order') return state.orders.find((x) => x.id === id);
+  return state.activities.find((x) => x.id === id);
+}
+function confirmDelete(kind, id) {
+  if (!requireEdit()) return;
+  const item = findItem(kind, id);
+  if (!item) { toast('ITEM NO LONGER ON BOARD', 'warn'); render(); return; }
+  const label = kind === 'series' ? srLabelPlain(item) : (item.title || item.item);
+  openModal(`<h2>Confirm Delete</h2>
+    <div class="note">This removes <b style="color:var(--text)">${esc(label)}</b> from the shared board
+    for all viewers. This cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-danger" data-action="do-delete" data-kind="${kind}" data-id="${id}">Delete</button>
+    </div>`);
+}
+async function doDelete(kind, id) {
+  const item = findItem(kind, id);
+  if (!item) { closeModal(); render(); return; }
+  if (kind === 'series') {
+    state.series = state.series.filter((x) => x.id !== id);
+    pushLog('Series removed: ' + srLabelPlain(item));
+  } else if (kind === 'order') {
+    state.orders = state.orders.filter((x) => x.id !== id);
+    pushLog(`Order removed: "${item.item}"`);
+  } else {
+    state.activities = state.activities.filter((x) => x.id !== id);
+    pushLog(`Activity removed: "${item.title}"`);
+  }
+  closeModal();
+  render();
+  await saveState();
+  toast('REMOVED FROM BOARD', 'warn');
+}
+
+/* ----------------------------- DELEGATION ----------------------------- */
+/* Single delegated listener — no inline onclick attributes anywhere. */
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const d = el.dataset;
+  const actions = {
+    'tab':            () => { currentTab = d.tab; render(); },
+    'phase':          () => { phaseFilter = d.phase; render(); },
+    'lock-menu':      () => openLockMenu(),
+    'try-unlock':     () => tryUnlock(),
+    'lock-board':     () => lockBoard(),
+    'passcode-change':() => openPasscodeChange(),
+    'save-passcode':  () => savePasscode(),
+    'close-modal':    () => closeModal(),
+    'lens':           () => { lensStep = (lensStep === d.step ? null : d.step); render(); },
+    'cycle-step':     () => cycleStep(d.series, d.step),
+    'save-stage-date':() => saveStageDate(d.series, d.step),
+    'cycle-activity': () => cycleActivity(d.id),
+    'cycle-order':    () => cycleOrder(d.id),
+    'feed-detail':    () => openFeedDetail(),
+    'filter':         () => { activityFilter = d.filter; render(); },
+    'series-modal':   () => openSeriesModal(d.id || null),
+    'save-series':    () => saveSeries(d.id || null),
+    'order-modal':    () => openOrderModal(d.id || null),
+    'save-order':     () => saveOrder(d.id || null),
+    'activity-modal': () => openActivityModal(d.id || null),
+    'save-activity':  () => saveActivity(d.id || null),
+    'manage-weights': () => openWeightsModal(),
+    'save-weights':   () => saveWeights(),
+    'phases-modal':   () => openPhasesModal(),
+    'save-phases':    () => savePhases(),
+    'confirm-delete': () => confirmDelete(d.kind, d.id),
+    'do-delete':      () => doDelete(d.kind, d.id),
+    'ph-del': () => {
+      const row = el.closest('.ph-row');
+      row.dataset.deleted = row.dataset.deleted === '1' ? '' : '1';
+      row.classList.toggle('rowdel', row.dataset.deleted === '1');
+    }
+  };
+  const fn = actions[d.action];
+  if (fn) fn();
+});
+/* Keyboard activation for the pipeline stages (role=button) */
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.action === 'lens') {
+    e.preventDefault();
+    lensStep = (lensStep === e.target.dataset.step ? null : e.target.dataset.step);
+    render();
+  }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.action === 'feed-detail') {
+    e.preventDefault();
+    openFeedDetail();
+  }
+});
+
+/* ----------------------------- INIT ----------------------------- */
+(async function init() {
+  $('#view').innerHTML = '<div class="empty">CONNECTING TO SHARED BOARD&hellip;</div>';
+  await Store.init();
+  const json = await Store.load();
+  if (json) {
+    try { state = JSON.parse(json); } catch (e) { state = defaultState(); }
+    normalizeState();
+  } else {
+    state = defaultState();
+    if (Store.mode !== 'local') { try { await Store.save(JSON.stringify(state)); } catch (e) { /* first save */ } }
+  }
+  markSynced();
+  if (Store.mode === 'local') {
+    toast('LOCAL PREVIEW \u2014 NO BACKEND CONFIGURED, CHANGES ARE NOT SAVED', 'warn');
+  }
+  Store.subscribe((j) => applyRemote(j));
+  render();
+})();
+</script>
+</body>
+</html>
