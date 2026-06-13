@@ -525,6 +525,8 @@ const Store = {
   mode: 'local',            /* 'claude' | 'firebase' | 'local' */
   _ref: null,
   _lastWritten: null,       /* echo suppression for firebase listener */
+  auth: null,               /* firebase.auth() when available */
+  user: null,               /* signed-in user, or null */
 
   async init() {
     if (typeof window.storage === 'object' && window.storage && typeof window.storage.get === 'function') {
@@ -535,8 +537,15 @@ const Store = {
       try {
         await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
         await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+        await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
         firebase.initializeApp(FIREBASE_CONFIG);
         this._ref = firebase.database().ref(FIREBASE_PATH);
+        this.auth = firebase.auth();
+        this.auth.onAuthStateChanged((u) => {
+          this.user = u || null;
+          if (!this.user && editMode) { editMode = false; }   /* losing auth drops edit mode */
+          if (typeof render === 'function' && state) render();
+        });
         this.mode = 'firebase';
         return;
       } catch (e) {
@@ -545,6 +554,18 @@ const Store = {
     }
     this.mode = 'local';
   },
+
+  async signIn() {
+    if (!this.auth) throw new Error('Auth unavailable');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const res = await this.auth.signInWithPopup(provider);
+    return res.user;
+  },
+  async signOut() {
+    if (this.auth) await this.auth.signOut();
+  },
+  /* True only when no real auth layer applies (Claude artifact / local preview). */
+  authNotApplicable() { return this.mode !== 'firebase'; },
 
   async load() {
     if (this.mode === 'claude') {
@@ -718,7 +739,8 @@ async function saveState() {
     await Store.save(JSON.stringify(state));
     markSynced();
   } catch (e) {
-    toast('SYNC FAILED — RETRY ACTION', 'bad');
+    const denied = e && (e.code === 'PERMISSION_DENIED' || /permission/i.test(e.message || ''));
+    toast(denied ? 'NOT AUTHORIZED TO EDIT — SIGN IN AS THE ALLOWLISTED ACCOUNT' : 'SYNC FAILED — RETRY ACTION', 'bad');
   }
 }
 
@@ -1244,29 +1266,70 @@ function openFeedDetail() {
 
 function openLockMenu() {
   if (editMode) {
+    const who = (!Store.authNotApplicable() && Store.user)
+      ? `<div class="note" style="margin-top:0">Signed in as <b style="color:var(--text)">${esc(Store.user.email || Store.user.displayName || 'editor')}</b>.</div>` : '';
     openModal(`<h2>Edit Menu</h2>
       <div class="note">You are in edit mode for this session.</div>
+      ${who}
       <div class="modal-actions">
         <button class="btn-ghost" data-action="phases-modal">Phases</button>
         <button class="btn-ghost" data-action="manage-weights">Step Weights</button>
         <button class="btn-ghost" data-action="passcode-change">Change Passcode</button>
+        ${!Store.authNotApplicable() ? '<button class="btn-ghost" data-action="sign-out">Sign Out</button>' : ''}
         <button class="btn-go" data-action="lock-board">Lock Board</button>
       </div>`);
     return;
   }
+  /* Firebase mode: require Google sign-in (database-enforced) BEFORE the passcode. */
+  if (!Store.authNotApplicable() && !Store.user) {
+    openModal(`<h2>Editor Sign-In</h2>
+      <div class="note" style="margin-top:0">Editing requires an authorized Google account. Viewing stays open to everyone. After signing in you'll also enter the edit passcode.</div>
+      <div class="err" id="authErr"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" data-action="close-modal">Cancel</button>
+        <button class="btn-go" data-action="google-signin">Sign in with Google</button>
+      </div>`);
+    return;
+  }
+  const signedAs = (!Store.authNotApplicable() && Store.user)
+    ? `<div class="note" style="margin-top:0">Signed in as <b style="color:var(--text)">${esc(Store.user.email || 'editor')}</b>. Enter the passcode to enable editing.</div>` : '';
   openModal(`<h2>Unlock Edit Mode</h2>
+    ${signedAs}
     <div class="field"><label>Passcode</label><input type="password" id="passInput" autocomplete="off"></div>
     <div class="err" id="passErr"></div>
-    <div class="note">Edit access is gated by a SHA-256-hashed passcode. This is a client-side
-    convenience lock for lab coordination, not a security boundary.</div>
+    <div class="note">Two layers protect edits: an authorized Google account (enforced by the database) and this passcode. Write access is rejected by the database for anyone not on the allowlist.</div>
     <div class="modal-actions">
       <button class="btn-ghost" data-action="close-modal">Cancel</button>
       <button class="btn-go" data-action="try-unlock">Unlock</button>
     </div>`);
 }
+async function googleSignIn() {
+  const err = $('#authErr');
+  try {
+    await Store.signIn();
+    openLockMenu();   /* re-open: now signed in -> shows the passcode step */
+  } catch (e) {
+    const msg = (e && e.code === 'auth/popup-closed-by-user') ? 'SIGN-IN CANCELLED'
+      : (e && e.message ? e.message.toUpperCase() : 'SIGN-IN FAILED');
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+    else toast(msg, 'bad');
+  }
+}
+async function signOutEditor() {
+  try { await Store.signOut(); } catch (e) { /* ignore */ }
+  editMode = false;
+  closeModal();
+  render();
+  toast('SIGNED OUT');
+}
 async function tryUnlock() {
   const input = $('#passInput');
   const err = $('#passErr');
+  /* Defense in depth: in Firebase mode, never enable editing without a signed-in user. */
+  if (!Store.authNotApplicable() && !Store.user) {
+    if (err) { err.textContent = 'SIGN IN WITH GOOGLE FIRST'; err.style.display = 'block'; }
+    return;
+  }
   try {
     const h = await sha256Hex(input ? input.value : '');
     if (h === state.passHash) {
@@ -1592,6 +1655,8 @@ document.addEventListener('click', (e) => {
     'phase':          () => { phaseFilter = d.phase; render(); },
     'lock-menu':      () => openLockMenu(),
     'try-unlock':     () => tryUnlock(),
+    'google-signin':  () => googleSignIn(),
+    'sign-out':       () => signOutEditor(),
     'lock-board':     () => lockBoard(),
     'passcode-change':() => openPasscodeChange(),
     'save-passcode':  () => savePasscode(),
