@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Progress</title>
+<title>FSEL // Fabrication Progress Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -94,10 +94,10 @@ header.hud {
 .brand .sub { font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-top:2px; }
 .hud-spacer { flex:1; }
 .hud-meta { text-align:right; font-family:var(--mono); font-size:11px; color:var(--dim); line-height:1.7; }
-.hud-meta .live { color:var(--green); }
-.hud-meta .live .sync-time { display:block; color:var(--dim); margin-top:2px; }
-.hud-meta .live.warn { color:var(--amber); }
-.hud-meta .live::before { content:'\25CF'; margin-right:5px; animation:pulse 2s infinite; }
+.hud-meta .updated { color:var(--green); white-space:nowrap; }
+.hud-meta .updated.warn { color:var(--amber); }
+.hud-meta .updated::before { content:'\25CF'; margin-right:6px; font-size:8px; vertical-align:middle; animation:pulse 2s infinite; }
+.hud-meta .updated #updTime { color:var(--dim); }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 .ring-wrap { display:flex; align-items:center; gap:12px; }
 .ring { width:64px; height:64px; transform:rotate(-90deg); }
@@ -197,10 +197,7 @@ table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:
 .series-id { font-weight:700; font-size:14px; letter-spacing:.5px; }
 .series-tags { font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:3px; letter-spacing:.5px; display:flex; gap:5px; flex-wrap:wrap; }
 .tag { border:1px solid var(--line); padding:1px 6px; white-space:nowrap; }
-.tag.sev { color:var(--amber); border-color:rgba(255,180,84,.35); }   /* fallback */
-.tag.sev-m  { color:#F5D14E; border-color:rgba(245,209,78,.45); }   /* Mild — yellow */
-.tag.sev-md { color:#FF983D; border-color:rgba(255,152,61,.5); }   /* Moderate — orange */
-.tag.sev-s  { color:#FF5247; border-color:rgba(255,82,71,.55); }     /* Severe — red */
+.tag.sev { color:var(--amber); border-color:rgba(255,180,84,.35); }
 .tag.ctrl { color:var(--green); border-color:rgba(77,245,155,.35); }
 .cell-chip {
   font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:5px 9px;
@@ -231,21 +228,9 @@ table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:
 .g-row { display:grid; grid-template-columns:var(--glabel) 1fr; gap:14px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); animation: rise .45s var(--ease-out) both; animation-delay: var(--d, 0ms); }
 .g-label .series-id { font-size:13px; }
 .g-track { position:relative; height:20px; background:rgba(63,224,255,.05); }
-.g-bar { position:absolute; top:3px; bottom:3px; background:transparent; border:1px solid var(--line-hi); overflow:hidden; display:flex; transform-origin:left; animation: growx .9s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+.g-bar { position:absolute; top:3px; bottom:3px; background:rgba(63,224,255,.14); border:1px solid var(--line-hi); overflow:hidden; transform-origin:left; animation: growx .9s var(--ease-out) both; animation-delay: var(--d, 0ms); }
 .g-bar.overdue { border-color:rgba(255,92,122,.75); box-shadow:0 0 8px rgba(255,92,122,.25); }
-.g-seg { height:100%; min-width:0; }
-.g-seg + .g-seg { box-shadow:-1px 0 0 rgba(5,9,15,.55); }   /* boundary between stages */
-.g-seg.done    { background:linear-gradient(90deg, rgba(77,245,155,.50), rgba(77,245,155,.28)); }
-.g-seg.active  { background:linear-gradient(90deg, rgba(255,180,84,.55), rgba(255,180,84,.28)); }
-.g-seg.pending { background:rgba(63,224,255,.05); }
-.g-seg.est { background-image:repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(215,233,245,.05) 4px, rgba(215,233,245,.05) 8px); }
-.g-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-top:12px; font-family:var(--mono); font-size:10px; letter-spacing:1px; color:var(--dim); }
-.g-legend .seq { color:var(--dim); }
-.g-legend .lg { display:inline-flex; align-items:center; gap:6px; text-transform:uppercase; }
-.g-legend .lg::before { content:''; width:14px; height:10px; border:1px solid var(--line-hi); }
-.g-legend .lg.done::before { background:rgba(77,245,155,.4); }
-.g-legend .lg.active::before { background:rgba(255,180,84,.45); }
-.g-legend .lg.pending::before { background:rgba(63,224,255,.05); }
+.g-fill { position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg, rgba(63,224,255,.35), rgba(63,224,255,.7)); }
 .g-pct { position:absolute; right:6px; top:50%; transform:translateY(-50%); font-family:var(--mono); font-size:9px; color:var(--text); }
 .g-nodates { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; }
 .today-line { position:absolute; top:0; bottom:0; width:1px; background:var(--amber); z-index:2; pointer-events:none; animation: glowpulse 2.5s ease-in-out infinite; }
@@ -288,12 +273,6 @@ table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:
 /* ---------- Feed / empty ---------- */
 .feed { font-family:var(--mono); font-size:11px; display:grid; gap:6px; max-height:240px; overflow-y:auto; }
 .feed div { color:var(--dim); border-left:2px solid var(--line); padding-left:10px; line-height:1.5; }
-.feed-head { cursor:pointer; transition:color .15s; }
-.feed-head:hover { color:var(--text); }
-.feed-head .feed-open { margin-left:auto; color:var(--cyan); font-size:10px; letter-spacing:1.5px; }
-.fd-list { display:grid; gap:6px; margin-top:14px; max-height:52vh; overflow-y:auto; font-family:var(--mono); font-size:11px; }
-.fd-row { color:var(--dim); border-left:2px solid var(--line); padding-left:10px; line-height:1.5; }
-.fd-row time { color:var(--cyan); margin-right:8px; }
 .feed time { color:var(--cyan); margin-right:8px; }
 .empty { text-align:center; padding:40px 20px; color:var(--dim); font-family:var(--mono); font-size:12px; letter-spacing:1px; line-height:2; }
 
@@ -342,7 +321,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
 
   <header class="hud corners"><span class="c"></span>
     <div class="brand">
-      <h1>Project <span>Progress</span></h1>
+      <h1>PROJECT <span>PROGRESS</span></h1>
       <div class="sub">NSF &mdash; CSR &middot; ASR &middot; FTC &middot; SIMULTANEOUS DETERIORATION PROGRAM</div>
     </div>
     <div class="hud-spacer"></div>
@@ -354,7 +333,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
       <div class="ring-label"><b id="ringPct">0%</b><small>WEIGHTED</small></div>
     </div>
     <div class="hud-meta">
-      <div class="live" id="syncStatus">CONNECTING&hellip;</div>
+      <div class="updated" id="updated">Last updated <span id="updTime">&mdash;</span></div>
     </div>
     <button class="hud-btn" id="lockBtn" data-action="lock-menu">&#9919; UNLOCK EDIT</button>
   </header>
@@ -389,9 +368,9 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
    3. LOCAL    — no backend configured: runs as a local preview,
                  nothing is saved or shared (warning shown).
 
-   Security model: SHA-256-hashed passcode is a client-side soft
-   lock; all user input HTML-escaped; no localStorage; no inline
-   event handlers (single delegated listener).
+   Security model unchanged: SHA-256-hashed passcode is a
+   client-side soft lock; all user input HTML-escaped; no
+   localStorage; no inline event handlers (delegated listener).
    ============================================================ */
 
 /* ╔══════════════════════════════════════════════════════════╗
@@ -400,15 +379,15 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
    ║  databaseURL is REQUIRED — create a Realtime Database.    ║
    ╚══════════════════════════════════════════════════════════╝ */
 const FIREBASE_CONFIG = {
-  apiKey:        "AIzaSyCvxNVERxv1sawMh2aX-qNXB0ge8Xj6r-k",
-  authDomain:    "nsf-project-progress-tracker.firebaseapp.com",
-  databaseURL:   "https://nsf-project-progress-tracker-default-rtdb.firebaseio.com",
-  projectId:     "nsf-project-progress-tracker",
-  storageBucket: "nsf-project-progress-tracker.firebasestorage.app",
-  messagingSenderId: "1097430586880",
-  appId:         "1:1097430586880:web:14223db59b5e4a04aaeae5"
+  apiKey:        "",   /* e.g. "AIzaSy..." */
+  authDomain:    "",   /* e.g. "fsel-tracker.firebaseapp.com" */
+  databaseURL:   "",   /* e.g. "https://fsel-tracker-default-rtdb.firebaseio.com" */
+  projectId:     "",   /* e.g. "fsel-tracker" */
+  storageBucket: "",
+  messagingSenderId: "",
+  appId:         ""
 };
-const FIREBASE_PATH = 'nsf_tracker/state';   /* matches the published Realtime Database rule */
+const FIREBASE_PATH = 'fsel_tracker/state';   /* where the board lives in your database */
 
 /* ----------------------------- CONFIG ----------------------------- */
 const STORE_KEY = 'fsel_tracker_state_v2';
@@ -417,18 +396,13 @@ const STEP_DEFS = [
   { id: 'cage', name: 'Cage' }, { id: 'formwork', name: 'Formwork' }, { id: 'cast', name: 'Cast' },
   { id: 'cure', name: 'Cure' }, { id: 'condition', name: 'Condition' }, { id: 'test', name: 'Test' }
 ];
-/* Fixed real stage durations in days (Condition is derived per series from its
-   start/end window). Mirrors the RT1 fabrication schedule. */
-const STAGE_FIXED_DAYS = { cage: 6, formwork: 3, cast: 2, cure: 28, test: 4 };
 const DEFAULT_WEIGHTS = { cage: 1, formwork: 1, cast: 1, cure: 1, condition: 3, test: 2 };
 const STATUS_ORDER = ['pending', 'active', 'done'];
 const STATUS_LABEL = { pending: 'Not Started', active: 'In Progress', done: 'Done' };
 const STATUS_VALUE = { pending: 0, active: 0.5, done: 1 };
 const ORDER_ORDER = ['ordered', 'transit', 'delivered', 'delayed'];
 const ORDER_LABEL = { ordered: 'Ordered', transit: 'In Transit', delivered: 'Delivered', delayed: 'Delayed' };
-const SEV_LABEL = { N: 'None', M: 'Mild', MD: 'Moderate', S: 'Severe' };
-const SEV_KEYS = ['N', 'M', 'MD', 'S'];   /* ascending severity, used by the series form */
-const COVER_OPTIONS = ['1.5"', '2.5"'];   /* selectable concrete-cover values */
+const SEV_LABEL = { N: 'None', M: 'Mild', S: 'Severe' };
 /* Default passcode: FSEL2026 (change it from the unlocked menu) */
 const DEFAULT_PASS_HASH = 'edec4fbe684b5f98bd4509dce6fc3fc9381836d22588547d117583c6279f668e';
 
@@ -439,8 +413,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-const nowStamp = () => new Date().toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
-const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const nowStamp = () => new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const parseDay = (s) => (s ? new Date(s + 'T00:00:00') : null);
 const DAY = 86400000;
 const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -596,9 +569,9 @@ const Store = {
   },
 
   statusLabel() {
-    if (this.mode === 'claude') return 'Last updated';
-    if (this.mode === 'firebase') return 'Last updated';
-    return 'Not saved \u2014 local preview';
+    if (this.mode === 'claude') return 'LIVE \u00B7 SHARED BOARD';
+    if (this.mode === 'firebase') return 'LIVE \u00B7 REALTIME SYNC';
+    return 'LOCAL PREVIEW \u2014 NOT SYNCED';
   }
 };
 
@@ -619,26 +592,25 @@ function defaultState() {
   const ph = {};
   ['RT1', 'RT2', 'RT3', 'RT4'].forEach((n) => { ph[n] = uid(); });
   const phases = Object.entries(ph).map(([name, id]) => ({ id, name }));
-  const mk = (phase, batch, bar, cover, sev, beams, start, end, steps, actuals) => ({
+  const mk = (phase, batch, bar, cover, sev, beams, start, end, steps) => ({
     id: uid(), phaseId: ph[phase], batch, bar, cover, sev, beams, start, end,
-    steps: { ...blankSteps(), ...(steps || {}) },
-    actuals: { ...(actuals || {}) }
+    steps: { ...blankSteps(), ...(steps || {}) }
   });
   return {
     passHash: DEFAULT_PASS_HASH,
+    updatedAt: Date.now(),
     weights: { ...DEFAULT_WEIGHTS },
     phases,
     series: [
       mk('RT1', 1, '#5', '1.5"', { csr: 'N', asr: 'N', ftc: 'N' }, 2, '2026-05-04', '2026-10-30',
-        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' },
-        { cage: '2026-05-11', formwork: '2026-05-15', cast: '2026-05-18' }),
+        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' }),
       mk('RT1', 1, '#5', '1.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-04', '2027-12-17',
         { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' }),
       mk('RT1', 1, '#5', '2.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-11', '2027-12-17',
         { cage: 'done', formwork: 'active' }),
-      mk('RT1', 2, '#7', '1.5"', { csr: 'MD', asr: 'MD', ftc: 'N' }, 2, '2026-07-06', '2028-02-18',
+      mk('RT1', 2, '#7', '1.5"', { csr: 'S', asr: 'M', ftc: 'N' }, 2, '2026-07-06', '2028-02-18',
         { cage: 'active' }),
-      mk('RT1', 2, '#7', '2.5"', { csr: 'S', asr: 'MD', ftc: 'N' }, 2, '2026-07-06', '2028-02-18', {}),
+      mk('RT1', 2, '#7', '2.5"', { csr: 'M', asr: 'S', ftc: 'N' }, 2, '2026-07-06', '2028-02-18', {}),
       mk('RT1', 3, '#11', '1.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {}),
       mk('RT1', 3, '#11', '2.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {})
     ],
@@ -658,27 +630,15 @@ function defaultState() {
       { id: uid(), title: 'UPV baseline readings (ASTM C597)', cat: 'Monitoring', owner: '', due: '', status: 'pending', notes: 'Companion cylinders + beams before conditioning.', phaseId: ph.RT1 },
       { id: uid(), title: 'Batch 1 cylinder program (C39 / C469)', cat: 'Material Testing', owner: '', due: '', status: 'active', notes: '', phaseId: ph.RT1 }
     ],
-    log: (() => {
-      const fmtT = (d) => d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
-      const ev = (iso, msg) => ({ t: fmtT(new Date(iso)), ts: +new Date(iso), msg });
-      return [
-        ev('2026-06-09T14:40', 'Batch 1 (Mild) #5 beams cast — 6 beams + companions.'),
-        ev('2026-06-05T09:15', 'Jobe-Newman reactive fine aggregate delivered (6 CY).'),
-        ev('2026-06-02T11:05', 'NaOH + NaCl ordered for bath chemistry.'),
-        ev('2026-05-26T15:30', 'ENPAC 5550 conditioning tanks ordered — ETA Jun 19.'),
-        ev('2026-05-18T16:20', 'RT1 B1 #5 1.5" control — Cast complete.'),
-        ev('2026-05-11T10:05', 'RT1 B1 #5 1.5" control — Cage complete.'),
-        ev('2026-04-20T13:00', 'Jobe-Newman reactive fine aggregate ordered (6 CY).')
-      ];
-    })()
+    log: [{ t: nowStamp(), msg: 'Board initialized.' }]
   };
 }
 
 function normalizeState() {
   state.passHash ??= DEFAULT_PASS_HASH;
+  state.updatedAt ??= Date.now();
   state.weights = { ...DEFAULT_WEIGHTS, ...(state.weights || {}) };
   state.series ??= []; state.orders ??= []; state.activities ??= []; state.log ??= [];
-  state.log.forEach((l) => { if (l.ts == null) l.ts = 0; });
   if (!Array.isArray(state.phases) || !state.phases.length) {
     state.phases = ['RT1', 'RT2', 'RT3', 'RT4'].map((n) => ({ id: uid(), name: n }));
   }
@@ -704,7 +664,6 @@ function normalizeState() {
     migrate(sr);
     sr.steps = { ...blankSteps(), ...(sr.steps || {}) };
     sr.sev = { ...blankSev(), ...(sr.sev || {}) };
-    sr.actuals = sr.actuals || {};
   });
   state.orders.forEach(migrate);
   state.activities.forEach(migrate);
@@ -714,6 +673,7 @@ function normalizeState() {
 }
 
 async function saveState() {
+  state.updatedAt = Date.now();
   try {
     await Store.save(JSON.stringify(state));
     markSynced();
@@ -722,21 +682,22 @@ async function saveState() {
   }
 }
 
+function fmtUpdated(ts) {
+  if (!ts) return '\u2014';
+  return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function renderUpdated() {
+  const t = $('#updTime');
+  if (t) t.textContent = fmtUpdated(state && state.updatedAt);
+  const box = $('#updated');
+  if (box) box.classList.toggle('warn', Store.mode === 'local');
+}
 function markSynced() {
-  const el = $('#syncStatus');
-  if (!el) return;
-  if (Store.mode === 'local') {
-    el.innerHTML = esc(Store.statusLabel());
-    el.classList.add('warn');
-  } else {
-    el.innerHTML = esc(Store.statusLabel()) +
-      '<span class="sync-time">' + esc(new Date().toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })) + '</span>';
-    el.classList.remove('warn');
-  }
+  renderUpdated();
 }
 
 function pushLog(msg) {
-  state.log.unshift({ t: nowStamp(), ts: Date.now(), msg });
+  state.log.unshift({ t: nowStamp(), msg });
   state.log = state.log.slice(0, 40);
 }
 
@@ -798,7 +759,7 @@ function sevChips(sr) {
   const parts = [];
   ['csr', 'asr', 'ftc'].forEach((k) => {
     const v = (sr.sev || {})[k] || 'N';
-    if (v !== 'N') parts.push(`<span class="tag sev sev-${esc(v.toLowerCase())}">${k.toUpperCase()} \u00B7 ${esc(SEV_LABEL[v])}</span>`);
+    if (v !== 'N') parts.push(`<span class="tag sev">${k.toUpperCase()} \u00B7 ${esc(SEV_LABEL[v])}</span>`);
   });
   return parts.length ? parts.join('') : '<span class="tag ctrl">CONTROL</span>';
 }
@@ -809,38 +770,6 @@ function srLabelPlain(sr) {
   const sevTxt = ['csr', 'asr', 'ftc'].filter((k) => (sr.sev || {})[k] !== 'N')
     .map((k) => k.toUpperCase() + '-' + (sr.sev[k] || 'N')).join('/') || 'CONTROL';
   return `${phaseName(sr.phaseId)}${sr.batch ? ' B' + sr.batch : ''} ${sr.bar || '-'} ${sr.cover || '-'} ${sevTxt}`;
-}
-/* Build a series' stage schedule. Completed stages with a recorded actual
-   completion date use that date (actual width); remaining stages are projected
-   forward from fixed durations (Condition from the expected window). Returns the
-   effective start/end plus per-stage segments flagged actual vs estimated. */
-function seriesSchedule(sr) {
-  const start = parseDay(sr.start);
-  const fixedSum = STEP_DEFS.reduce((a, st) => a + (STAGE_FIXED_DAYS[st.id] || 0), 0);
-  const expEnd = parseDay(sr.end);
-  const condEst = (start && expEnd) ? Math.max((expEnd - start) / DAY - fixedSum, 0.5) : 30;
-  const acts = sr.actuals || {};
-  let cursor = +start;
-  const segs = STEP_DEFS.map((st) => {
-    const status = sr.steps[st.id] || 'pending';
-    const ad = (status === 'done' && acts[st.id]) ? +parseDay(acts[st.id]) : null;
-    let endMs;
-    if (ad != null) {
-      endMs = Math.max(ad, cursor + 0.25 * DAY);   /* keep stages forward-ordered */
-    } else {
-      const estDays = st.id === 'condition' ? condEst : (STAGE_FIXED_DAYS[st.id] || 1);
-      endMs = cursor + estDays * DAY;
-    }
-    const seg = {
-      id: st.id, name: st.name, status,
-      days: Math.max((endMs - cursor) / DAY, 0.25),
-      actual: ad != null,
-      date: ad != null ? acts[st.id] : null
-    };
-    cursor = endMs;
-    return seg;
-  });
-  return { start, end: new Date(cursor), segs };
 }
 function orderEta(o) {
   if (o.status === 'delivered') return { cls: 'in', txt: 'DELIVERED' };
@@ -863,6 +792,7 @@ function render() {
   lb.classList.toggle('unlocked', editMode);
   $$('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === currentTab));
   renderPhasebar();
+  renderUpdated();
 
   const v = $('#view');
   v.classList.remove('vin');
@@ -895,14 +825,10 @@ function tweenCounts() {
 
 function renderPhasebar() {
   const hasUnassigned = [...state.series, ...state.orders, ...state.activities].some((x) => !x.phaseId);
-  const PHASE_TIP = { RT1: 'CSR · ASR', RT2: 'CSR · FTC', RT3: 'ASR · FTC', RT4: 'CSR · ASR · FTC' };
-  const tipFor = (name) => PHASE_TIP[String(name).trim().toUpperCase()] || '';
   let html = `<span class="plabel">PHASE</span>
     <button class="chip ${phaseFilter === 'all' ? 'on' : ''}" data-action="phase" data-phase="all">All</button>`;
-  html += state.phases.map((p) => {
-    const tip = tipFor(p.name);
-    return `<button class="chip ${phaseFilter === p.id ? 'on' : ''}" data-action="phase" data-phase="${p.id}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(p.name)}</button>`;
-  }).join('');
+  html += state.phases.map((p) =>
+    `<button class="chip ${phaseFilter === p.id ? 'on' : ''}" data-action="phase" data-phase="${p.id}">${esc(p.name)}</button>`).join('');
   if (hasUnassigned) {
     html += `<button class="chip ${phaseFilter === '__none' ? 'on' : ''}" data-action="phase" data-phase="__none">Unassigned</button>`;
   }
@@ -917,6 +843,7 @@ function renderPipeline() {
     return `<div class="stage ${lensStep === s.id ? 'sel' : ''}" data-band="${band}" data-action="lens" data-step="${s.id}"
       style="--i:${i}" role="button" tabindex="0" title="Click to see series at this step">
       <div class="s-name">${s.name}</div>
+      <div class="s-w">WEIGHT \u00D7${stepW(s.id)}</div>
       <div class="s-pct">${p}%</div>
       <div class="s-bar"><div class="s-fill" style="width:${p}%"></div></div>
     </div>`;
@@ -944,11 +871,6 @@ function renderOverview() {
   const late = ords.filter((o) => orderEta(o).cls === 'late').length;
   const cnt = (st) => fActivities().filter((a) => a.status === st).length
     + fSeries().reduce((n, sr) => n + STEP_DEFS.filter((s) => sr.steps[s.id] === st).length, 0);
-  const feedPreview = 4;
-  const feed = state.log.length
-    ? state.log.slice(0, feedPreview).map((l) =>
-        `<div><time>${esc(l.t)}</time>${esc(l.msg)}</div>`).join('')
-    : '<div class="empty">No activity yet.</div>';
 
   return `
     <div class="kpis">
@@ -961,10 +883,6 @@ function renderOverview() {
     <div class="panel corners" style="--d:120ms"><span class="c"></span>
       <div class="panel-title">Process Pipeline \u2014 click a step to inspect</div>
       ${renderPipeline()}
-    </div>
-    <div class="panel corners" style="--d:240ms"><span class="c"></span>
-      <div class="panel-title feed-head" ${state.log.length ? 'data-action="feed-detail" role="button" tabindex="0"' : ''}>Activity Feed${state.log.length ? '<span class="feed-open">View All \u2197</span>' : ''}</div>
-      <div class="feed">${feed}</div>
     </div>`;
 }
 
@@ -999,7 +917,7 @@ function renderMatrix() {
     <div class="panel-title">Series \u00D7 Process Matrix
       <span class="right">${editMode ? '<button class="btn-ghost" data-action="manage-weights">Weights</button>' : ''}${addBtn}</span></div>
     <div class="table-scroll"><table class="matrix">
-      <thead><tr><th>Series</th>${STEP_DEFS.map((s) => `<th>${s.name}</th>`).join('')}<th>Weighted</th><th></th></tr></thead>
+      <thead><tr><th>Series</th>${STEP_DEFS.map((s) => `<th>${s.name} \u00D7${stepW(s.id)}</th>`).join('')}<th>Weighted</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div></div>`;
 }
 
@@ -1011,11 +929,9 @@ function renderTimeline() {
       <div class="panel-title">Series Timeline</div>
       <div class="empty">No series in this phase have start / expected-end dates yet.<br>Edit a series (pencil icon in the Series Matrix) to set its dates and it appears here as a Gantt bar.</div></div>`;
   }
-  const schedById = {};
-  dated.forEach((sr) => { schedById[sr.id] = seriesSchedule(sr); });
   const PAD = 15 * DAY;
-  const min = Math.min(...dated.map((sr) => +schedById[sr.id].start)) - PAD;
-  const max = Math.max(...dated.map((sr) => +schedById[sr.id].end)) + PAD;
+  const min = Math.min(...dated.map((sr) => +parseDay(sr.start))) - PAD;
+  const max = Math.max(...dated.map((sr) => +parseDay(sr.end))) + PAD;
   const range = Math.max(max - min, DAY);
   const today = Date.now();
   const todayPct = Math.min(100, Math.max(0, ((today - min) / range) * 100));
@@ -1025,20 +941,14 @@ function renderTimeline() {
     const d = Math.min(i * 50, 450) + 'ms';
     let track;
     if (sr.start && sr.end) {
-      const sched = schedById[sr.id];
-      const sMs = +sched.start, eMs = +sched.end;
-      const left = Math.max(0, ((sMs - min) / range) * 100);
-      const width = Math.max(0.5, ((eMs - sMs) / range) * 100);
+      const s = +parseDay(sr.start), e = +parseDay(sr.end);
+      const left = Math.max(0, ((s - min) / range) * 100);
+      const width = Math.max(0.5, ((e - s) / range) * 100);
       const p = seriesPct(sr);
-      const expEnd = +parseDay(sr.end);
-      const overdue = today > expEnd && p < 100;
-      const segs = sched.segs.map((seg) => {
-        const tip = `${seg.name} \u2014 ${STATUS_LABEL[seg.status]}` + (seg.actual ? ` (done ${seg.date})` : ' (projected)');
-        return `<div class="g-seg ${seg.status}${seg.actual ? '' : ' est'}" style="flex:${seg.days} 0 0" title="${esc(tip)}"></div>`;
-      }).join('');
+      const overdue = today > e && p < 100;
       track = `<div class="g-track">
         <div class="g-bar ${overdue ? 'overdue' : ''}" style="left:${left}%; width:${width}%; --d:${d}">
-          ${segs}<span class="g-pct">${p}%</span>
+          <div class="g-fill" style="width:${p}%"></div><span class="g-pct">${p}%</span>
         </div></div>`;
     } else {
       track = `<div class="g-track"><span class="g-nodates" style="position:absolute; left:8px; top:4px;">SET START / END DATES</span></div>`;
@@ -1054,11 +964,6 @@ function renderTimeline() {
     <div class="table-scroll"><div class="g-wrap">
       <div class="g-axis"><span>${fmt(min)}</span><span class="t">TODAY \u00B7 ${fmt(today)}</span><span>${fmt(max)}</span></div>
       <div class="g-rows">${rows}<div class="today-line" style="left:calc(var(--glabel) + 14px + (100% - var(--glabel) - 14px) * ${(todayPct / 100).toFixed(4)})"></div></div>
-      <div class="g-legend">
-        <span class="seq">STAGES L\u2192R: CAGE \u00B7 FORMWORK \u00B7 CAST \u00B7 CURE \u00B7 CONDITION \u00B7 TEST</span>
-        <span class="lg done">Done (actual)</span><span class="lg active">In Progress</span><span class="lg pending">Not Started</span>
-        <span class="seq">HATCHED = PROJECTED &middot; HOVER A SEGMENT FOR ITS DATE</span>
-      </div>
     </div></div></div>`;
 }
 
@@ -1149,48 +1054,10 @@ async function cycleStep(seriesId, stepId) {
   if (!requireEdit()) return;
   const sr = state.series.find((s) => s.id === seriesId);
   if (!sr) return;
-  const cur = sr.steps[stepId] || 'pending';
-  const next = nextOf(STATUS_ORDER, cur);
-  if (next === 'done') {
-    openStageDateModal(seriesId, stepId);   /* records the date, then marks Done */
-    return;
-  }
-  sr.steps[stepId] = next;
-  if (cur === 'done' && sr.actuals) delete sr.actuals[stepId];   /* leaving Done clears the date */
-  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 ${STATUS_LABEL[next]}`);
+  sr.steps[stepId] = nextOf(STATUS_ORDER, sr.steps[stepId] || 'pending');
+  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 ${STATUS_LABEL[sr.steps[stepId]]}`);
   render();
   await saveState();
-}
-
-function openStageDateModal(seriesId, stepId) {
-  const sr = state.series.find((s) => s.id === seriesId);
-  if (!sr) return;
-  const stage = STEP_DEFS.find((s) => s.id === stepId);
-  const preset = (sr.actuals && sr.actuals[stepId]) || todayISO();
-  openModal(`<h2>${stage.name} Complete</h2>
-    <div class="field"><label>Actual Completion Date</label>
-      <input type="date" id="stageDate" value="${esc(preset)}"></div>
-    <div class="err" id="stageDateErr">A DATE IS REQUIRED</div>
-    <div class="note">Recorded as the actual ${stage.name.toLowerCase()} completion date for
-    ${esc(srLabel(sr))}. The Timeline bar redraws this stage to the recorded date.</div>
-    <div class="modal-actions">
-      <button class="btn-ghost" data-action="close-modal">Cancel</button>
-      <button class="btn-go" data-action="save-stage-date" data-series="${seriesId}" data-step="${stepId}">Mark Done</button>
-    </div>`);
-}
-async function saveStageDate(seriesId, stepId) {
-  const sr = state.series.find((s) => s.id === seriesId);
-  if (!sr) { closeModal(); return; }
-  const d = $('#stageDate').value;
-  if (!d) { $('#stageDateErr').style.display = 'block'; return; }
-  sr.steps[stepId] = 'done';
-  sr.actuals = sr.actuals || {};
-  sr.actuals[stepId] = d;
-  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 Done (${d})`);
-  closeModal();
-  render();
-  await saveState();
-  toast('STAGE DATE RECORDED');
 }
 async function cycleActivity(id) {
   if (!requireEdit()) return;
@@ -1230,17 +1097,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modalOpen) closeModal();
   if (e.key === 'Enter' && modalOpen && e.target && e.target.id === 'passInput') tryUnlock();
 });
-
-function openFeedDetail() {
-  const items = state.log.slice();
-  const list = items.length
-    ? items.map((l) => `<div class="fd-row"><time>${esc(l.t)}</time>${esc(l.msg)}</div>`).join('')
-    : '<div class="empty">No activity recorded yet.</div>';
-  openModal(`<h2>Activity Log</h2>
-    <div class="note" style="margin-top:0">All activity recorded to date \u2014 ${items.length} ${items.length === 1 ? 'entry' : 'entries'}, newest first.</div>
-    <div class="fd-list">${list}</div>
-    <div class="modal-actions"><button class="btn-go" data-action="close-modal">Close</button></div>`);
-}
 
 function openLockMenu() {
   if (editMode) {
@@ -1398,12 +1254,12 @@ function openSeriesModal(id) {
     </div>
     <div class="field-row">
       <div class="field"><label>Bar Size</label><input id="fBar" maxlength="8" placeholder="#5" value="${sr ? esc(sr.bar) : ''}"></div>
-      <div class="field"><label>Cover</label><select id="fCover">${(sr && sr.cover && !COVER_OPTIONS.includes(sr.cover) ? [sr.cover, ...COVER_OPTIONS] : COVER_OPTIONS).map((v) => `<option value="${esc(v)}" ${(sr ? sr.cover : '') === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="field"><label>Cover</label><input id="fCover" maxlength="8" placeholder="1.5&quot;" value="${sr ? esc(sr.cover) : ''}"></div>
     </div>
     <div class="field-row3">
-      <div class="field"><label>CSR</label><select id="fCsr">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.csr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
-      <div class="field"><label>ASR</label><select id="fAsr">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.asr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
-      <div class="field"><label>FTC</label><select id="fFtc">${SEV_KEYS.map((v) => `<option value="${v}" ${(sr ? sr.sev.ftc : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>CSR</label><select id="fCsr">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.csr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>ASR</label><select id="fAsr">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.asr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>FTC</label><select id="fFtc">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.ftc : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Start</label><input type="date" id="fStart" value="${sr ? esc(sr.start || '') : ''}"></div>
@@ -1417,7 +1273,7 @@ function openSeriesModal(id) {
 async function saveSeries(id) {
   const data = {
     phaseId: $('#fPhase').value, batch: Math.max(0, parseInt($('#fBatch').value, 10) || 0),
-    bar: $('#fBar').value.trim().slice(0, 8), cover: $('#fCover').value,
+    bar: $('#fBar').value.trim().slice(0, 8), cover: $('#fCover').value.trim().slice(0, 8),
     sev: { csr: $('#fCsr').value, asr: $('#fAsr').value, ftc: $('#fFtc').value },
     beams: Math.max(0, parseInt($('#fBeams').value, 10) || 0),
     start: $('#fStart').value, end: $('#fEnd').value
@@ -1598,10 +1454,8 @@ document.addEventListener('click', (e) => {
     'close-modal':    () => closeModal(),
     'lens':           () => { lensStep = (lensStep === d.step ? null : d.step); render(); },
     'cycle-step':     () => cycleStep(d.series, d.step),
-    'save-stage-date':() => saveStageDate(d.series, d.step),
     'cycle-activity': () => cycleActivity(d.id),
     'cycle-order':    () => cycleOrder(d.id),
-    'feed-detail':    () => openFeedDetail(),
     'filter':         () => { activityFilter = d.filter; render(); },
     'series-modal':   () => openSeriesModal(d.id || null),
     'save-series':    () => saveSeries(d.id || null),
@@ -1630,10 +1484,6 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     lensStep = (lensStep === e.target.dataset.step ? null : e.target.dataset.step);
     render();
-  }
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && e.target.dataset.action === 'feed-detail') {
-    e.preventDefault();
-    openFeedDetail();
   }
 });
 

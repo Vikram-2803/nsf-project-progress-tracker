@@ -1,62 +1,37 @@
-# Project Progress — NSF Deterioration Program Tracker
+# Project Progress — FSEL Fabrication Tracker
 
-A single-file web app for tracking fabrication progress of the RT1–RT4 reinforced-concrete
-deterioration specimens (CSR · ASR · FTC). The whole app is `index.html` — no build step,
-no dependencies to install.
+A single-file, self-contained dashboard for tracking fabrication progress of the
+NSF CAREER deterioration program (CSR · ASR · FTC). No build step and nothing to
+install — the entire app (HTML, CSS, and JavaScript) lives inside `index.html`.
 
-## Live board
+## Deploy on GitHub Pages
+1. Put `index.html` in the repository **root**. The file must be named exactly `index.html`.
+2. In the repo, go to **Settings → Pages → Build and deployment → Source: Deploy from a branch**.
+3. Select branch `main` and folder `/ (root)`, then **Save**.
+4. Wait ~1 minute. The board is live at `https://<user>.github.io/<repo>/`.
 
-Hosted on GitHub Pages and backed by a Firebase Realtime Database, so everyone who opens
-the URL sees and edits the **same** board in real time.
+No separate files are required for the app to run. This README is optional documentation only.
 
-## How it's wired
+## Make edits save and sync (important)
+By default the hosted page runs in **LOCAL PREVIEW** mode: it displays the board but
+**does not save changes** — refreshing resets everything to the seed data. To turn it
+into a real shared board, connect a Firebase Realtime Database:
 
-- **Frontend:** one static file, `index.html`. Open it anywhere and it runs.
-- **Storage:** Firebase Realtime Database. The board state lives at the path
-  `nsf_tracker/state`. The Firebase web config is embedded near the top of `index.html`
-  in the `FIREBASE_CONFIG` block (this is expected to be public — access is governed by the
-  database rules, not by hiding the config).
-- **Sync:** changes push to all open viewers via Firebase's realtime listener.
+1. Create a Firebase project and add a **Realtime Database**.
+2. Copy the web-app config from **Firebase console → Project settings → Your apps**.
+3. Paste it into the `FIREBASE_CONFIG` block near the top of the `<script>` in `index.html`
+   (`databaseURL` is required).
+4. Commit and push. All viewers now share one live board that syncs in real time.
 
-## Database rules
-
-The Realtime Database rule scopes open read/write to the board path only:
-
-```json
-{
-  "rules": {
-    "nsf_tracker": { ".read": true, ".write": true }
-  }
-}
-```
-
-This is a convenience setup for lab coordination, **not** a security boundary. Anyone with
-the URL can read and write the board. Edit access in the UI is additionally gated behind a
-client-side passcode (see below), which is a soft lock, not cryptographic protection.
+Set Realtime Database **security rules** to control who can write. The in-app passcode is
+only a client-side convenience lock, not a security boundary.
 
 ## Editing the board
-
-- **View** is open to everyone.
-- **Edit mode** is unlocked with a passcode via the "Unlock Edit" button.
-  - Default passcode: `FSEL2026`
-  - Change it from the unlocked menu → Change Passcode (stored as a SHA-256 hash).
-- In edit mode you can update stage statuses, log orders/activities, manage phases, and set
-  step weights. Marking a stage **Done** prompts for its actual completion date, which the
-  Timeline uses to draw the real stage widths.
-
-## Deploying / updating
-
-1. Edit `index.html`.
-2. Commit and push to the `main` branch.
-3. GitHub Pages redeploys automatically (Settings → Pages → Deploy from `main` / root).
-
-Updating the file changes the **app**, not the **data** — the recorded board state persists
-in Firebase across redeploys.
+- Click **Unlock Edit** and enter the passcode (default: `FSEL2026`).
+- Change the passcode any time from the edit menu; it is stored as a SHA-256 hash.
+- In edit mode you can add or edit series, orders, activities, phases, and step weights.
 
 ## Notes
-
-- Free Firebase **Spark** plan is sufficient for a lab-sized board.
-- If the database was created in test mode, make sure the rules above are **published**
-  (test-mode rules expire after ~30 days and would otherwise lock the board).
-- Running `index.html` with an empty `FIREBASE_CONFIG` falls back to a local, unsynced
-  preview (useful for trying design changes without touching the live data).
+- Inside a Claude artifact the board uses Claude shared storage automatically; on the
+  open web it uses Firebase (if configured) or falls back to local preview.
+- The header "Last updated" stamp reflects the last saved change to the shared board.
