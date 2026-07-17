@@ -72,7 +72,7 @@ body {
 .panel, .kpi { animation: rise .5s var(--ease-out) both; animation-delay: var(--d, 0ms); }
 
 /* ---------- HUD frame & header ---------- */
-.shell { max-width:1320px; margin:0 auto; padding:18px 20px 80px; }
+.shell { max-width:1600px; margin:0 auto; padding:18px 20px 80px; }
 header.hud {
   display:flex; align-items:center; gap:20px; flex-wrap:wrap;
   border:1px solid var(--line); background:linear-gradient(180deg, var(--panel-2), var(--panel));
@@ -137,6 +137,10 @@ nav.tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .chip:hover { color:var(--text); transform:translateY(-1px); }
 .chip.on { color:var(--cyan); border-color:var(--line-hi); background:var(--cyan-soft); }
 .chip.ghost { border-style:dashed; }
+.chip.sm { padding:4px 10px; font-size:10px; }
+.mtxfilters { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:14px; }
+.mf-label { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--dim); margin:0 2px 0 10px; }
+.mf-label:first-child { margin-left:0; }
 
 /* ---------- Panels & KPIs ---------- */
 .panel { border:1px solid var(--line); background:var(--panel); padding:18px; position:relative; margin-bottom:14px; }
@@ -170,7 +174,7 @@ nav.tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .stage.sel { background:var(--cyan-soft); border-color:var(--line-hi); }
 .stage .s-name { font-weight:700; font-size:14px; letter-spacing:1.5px; text-transform:uppercase; }
 .stage .s-w { font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; }
-.stage .s-pct { font-family:var(--mono); font-size:18px; margin-top:4px; }
+.stage .s-pct { font-family:var(--mono); font-size:18px; margin-top:8px; }
 .stage .s-bar { height:3px; background:rgba(63,224,255,.12); margin-top:8px; position:relative; overflow:hidden; }
 .stage .s-fill { position:absolute; inset:0 auto 0 0; transform-origin:left; animation: growx .9s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms); }
 .stage[data-band="lo"] .s-pct { color:var(--dim); }   .stage[data-band="lo"] .s-fill { background:var(--dim); }
@@ -186,6 +190,86 @@ nav.tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 
 /* ---------- Matrix ---------- */
 .table-scroll { overflow-x:auto; }
+.xtable { width:100%; border-collapse:collapse; font-size:13px; }
+.xtable th { font-family:var(--mono); font-size:10px; letter-spacing:1.5px; color:var(--dim); text-transform:uppercase; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line-hi); }
+.xtable th.num, .xtable td.num { text-align:right; font-family:var(--mono); white-space:nowrap; }
+.xtable td { padding:9px 10px; border-bottom:1px solid var(--line); }
+.xtable tr:hover td { background:rgba(63,224,255,.04); }
+.xtable td.cost { color:var(--cyan); }
+.xtable tfoot td { border-top:1px solid var(--line-hi); border-bottom:none; color:var(--text); font-family:var(--mono); }
+.xrow { cursor:pointer; }
+.xrow:hover td { background:rgba(63,224,255,.06); }
+.xrow.open td { background:rgba(63,224,255,.05); }
+.xcaret { display:inline-block; width:14px; color:var(--cyan); font-size:10px; }
+.xdetail td { padding:0 10px 10px 26px; background:rgba(63,224,255,.02); }
+.xsub { width:100%; border-collapse:collapse; font-size:12px; }
+.xsub th { font-family:var(--mono); font-size:9px; letter-spacing:1px; color:var(--dim); text-transform:uppercase; text-align:left; padding:8px 10px 6px; }
+.xsub th.num, .xsub td.num { text-align:right; font-family:var(--mono); white-space:nowrap; }
+.xsub td { padding:5px 10px; border-bottom:1px dashed var(--line); }
+.xsub td.cost { color:var(--cyan); }
+.hero-total { position:relative; border:1px solid var(--line-hi); padding:22px 28px 24px; margin-bottom:14px; overflow:hidden;
+  background:
+    radial-gradient(130% 180% at 0% 0%, rgba(63,224,255,.12), transparent 55%),
+    radial-gradient(130% 180% at 100% 120%, rgba(77,245,155,.09), transparent 55%),
+    var(--panel);
+  animation: rise .5s var(--ease-out) both; }
+.ht-sheen { position:absolute; top:0; bottom:0; left:-60%; width:42%; pointer-events:none;
+  background:linear-gradient(90deg, transparent, rgba(63,224,255,.14), transparent); transform:skewX(-18deg);
+  animation: heroSheen 5s ease-in-out infinite; }
+@keyframes heroSheen { 0% { left:-60%; } 55%,100% { left:150%; } }
+.ht-label, .ht-value { position:relative; z-index:1; }
+.ht-label { font-family:var(--mono); font-size:11px; letter-spacing:5px; text-transform:uppercase; color:var(--dim); margin-bottom:4px; }
+.ht-value { font-family:var(--display); font-weight:700; line-height:.95; display:inline-flex; align-items:baseline;
+  background:linear-gradient(92deg, var(--cyan) 0%, #8af0ff 42%, var(--green) 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
+  filter:drop-shadow(0 0 22px rgba(63,224,255,.42)); }
+.ht-cur { font-size:32px; margin-right:5px; opacity:.85; }
+.ht-int { font-size:clamp(46px, 8vw, 78px); letter-spacing:1px; }
+.ht-dec { font-size:28px; opacity:.7; margin-left:2px; }
+.modal.wide { max-width:640px; }
+.xd-item { font-family:var(--display); font-weight:600; font-size:18px; color:var(--text); margin:-4px 0 12px; line-height:1.3; word-break:break-word; }
+.xd-sum { display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; font-family:var(--mono); font-size:12px; letter-spacing:1px; color:var(--dim); padding-bottom:12px; border-bottom:1px solid var(--line); }
+.xd-sum .cost { color:var(--cyan); font-size:14px; margin-left:auto; }
+.xd-table { margin-top:12px; }
+.xd-table td, .xd-table th { white-space:normal; }
+.xd-table td.num, .xd-table th.num { white-space:nowrap; }
+.xtoolbar { display:flex; justify-content:flex-end; margin-bottom:12px; }
+.btn-sm { font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase; background:transparent; border:1px solid var(--line); color:var(--dim); padding:6px 12px; cursor:pointer; transition:all .2s; }
+.btn-sm:hover { color:var(--cyan); border-color:var(--line-hi); transform:translateY(-1px); }
+.tnote { font-family:var(--mono); font-size:11px; color:var(--dim); line-height:1.6; }
+.panel-title .right.over { color:var(--red); }
+.tbar { height:6px; background:rgba(63,224,255,.1); margin-bottom:14px; overflow:hidden; }
+.tbar > i { display:block; height:100%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); transition:width .6s var(--ease-out); }
+.tbar > i.over { background:var(--red); box-shadow:0 0 8px var(--red); }
+.slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.slot { border:1px dashed var(--line); min-height:58px; display:flex; align-items:center; justify-content:center; color:var(--dim); font-family:var(--mono); font-size:10px; letter-spacing:1px; }
+.slot.filled { border-style:solid; border-color:var(--line-hi); background:rgba(63,224,255,.05); flex-direction:column; align-items:flex-start; justify-content:center; padding:8px 12px; }
+.slot.filled.over { border-color:rgba(255,92,122,.6); background:var(--red-soft); }
+.slot-id { font-family:var(--display); font-weight:600; font-size:13px; color:var(--text); }
+.slot-sev { font-family:var(--mono); font-size:9px; color:var(--amber); letter-spacing:.5px; margin-top:3px; }
+.tmeta { display:flex; gap:22px; margin-top:14px; font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; }
+.tmeta b { color:var(--cyan); font-size:14px; }
+@media (max-width:560px){ .slots { grid-template-columns:repeat(2,1fr); } }
+.cd-wrap { display:flex; gap:24px; flex-wrap:wrap; }
+.cd-sevlist { display:flex; flex-direction:column; gap:10px; min-width:170px; }
+.cd-sev { display:flex; align-items:center; gap:11px; font-family:var(--display); font-weight:600; font-size:16px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--line); padding:14px 16px; cursor:pointer; transition:all .2s var(--ease-out); }
+.cd-sev:hover { color:var(--text); }
+.cd-sev.on { color:var(--text); border-color:var(--line-hi); border-left-color:var(--sc); background:rgba(63,224,255,.05); }
+.cd-sev-dot { width:10px; height:10px; border-radius:50%; background:var(--sc); box-shadow:0 0 8px var(--sc); flex:0 0 auto; }
+.cd-detail { display:flex; gap:20px; flex:1; flex-wrap:wrap; align-items:flex-start; }
+.cd-ring { text-align:center; }
+.cd-gauge { position:relative; width:130px; height:130px; margin:0 auto; }
+.cd-gauge svg { width:130px; height:130px; transform:rotate(-90deg); }
+.cdr-track { fill:none; stroke:rgba(63,224,255,.1); stroke-width:6; }
+.cdr-arc { fill:none; stroke:var(--sc); stroke-width:6; stroke-linecap:round; filter:drop-shadow(0 0 5px var(--sc)); transition:stroke-dashoffset .8s var(--ease-out); }
+.cd-ring.nodata .cdr-arc { stroke:rgba(120,140,165,.25); filter:none; }
+.cd-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.cd-center b { font-family:var(--display); font-size:32px; font-weight:700; color:var(--text); line-height:1; }
+.cd-center small { font-family:var(--mono); font-size:9px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-top:3px; }
+.cd-nodata { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--dim); }
+.cd-bar-lbl { font-family:var(--display); font-weight:700; font-size:18px; color:var(--sc); margin-top:8px; }
+.cd-exp { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:3px; }
+@media (max-width:640px){ .cd-sevlist { flex-direction:row; min-width:0; width:100%; flex-wrap:wrap; } .cd-detail { justify-content:center; width:100%; } }
 table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:13px; }
 .matrix th {
   font-family:var(--mono); font-size:10px; letter-spacing:1.5px; color:var(--dim);
@@ -234,6 +318,7 @@ table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:
 .g-pct { position:absolute; right:6px; top:50%; transform:translateY(-50%); font-family:var(--mono); font-size:9px; color:var(--text); }
 .g-nodates { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; }
 .today-line { position:absolute; top:0; bottom:0; width:1px; background:var(--amber); z-index:2; pointer-events:none; animation: glowpulse 2.5s ease-in-out infinite; }
+.gmark { position:absolute; top:4px; bottom:4px; width:2px; background:var(--green); box-shadow:0 0 4px var(--green); z-index:4; cursor:help; }
 
 /* ---------- Orders ---------- */
 .radar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
@@ -308,9 +393,17 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
 
 @media (max-width:680px) {
   header.hud { gap:12px; }
-  .hud-meta { display:none; }
+  .hud-spacer { display:none; }
+  .hud-meta { font-size:10px; }
   .field-row, .field-row3 { grid-template-columns:1fr; }
   .g-rows { --glabel:160px; }
+}
+@media (max-width:560px) {
+  .pipeline { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; overflow:visible; padding-bottom:0; }
+  .stage, .stage:first-child { min-width:0; padding:12px 14px; clip-path:none; }
+  .stage::after { display:none; }
+  .hero-total { padding:18px 20px 20px; }
+  .ht-cur { font-size:26px; } .ht-dec { font-size:22px; }
 }
 </style>
 </head>
@@ -330,7 +423,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
         <circle class="track" cx="32" cy="32" r="27"></circle>
         <circle class="arc" id="ringArc" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"></circle>
       </svg>
-      <div class="ring-label"><b id="ringPct">0%</b><small>WEIGHTED</small></div>
+      <div class="ring-label"><b id="ringPct">0%</b></div>
     </div>
     <div class="hud-meta">
       <div class="updated" id="updated">Last updated <span id="updTime">&mdash;</span></div>
@@ -342,7 +435,9 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
     <button class="tab active" data-action="tab" data-tab="overview" role="tab">Overview</button>
     <button class="tab" data-action="tab" data-tab="matrix" role="tab">Series Matrix</button>
     <button class="tab" data-action="tab" data-tab="timeline" role="tab">Timeline</button>
-    <button class="tab" data-action="tab" data-tab="orders" role="tab">Materials &amp; Orders</button>
+    <button class="tab" data-action="tab" data-tab="tanks" role="tab">Conditioning</button>
+    <button class="tab" data-action="tab" data-tab="orders" role="tab">Orders</button>
+    <button class="tab" data-action="tab" data-tab="expenses" role="tab">Expenses</button>
     <button class="tab" data-action="tab" data-tab="activities" role="tab">Activities</button>
   </nav>
 
@@ -393,16 +488,33 @@ const FIREBASE_PATH = 'fsel_tracker/state';   /* where the board lives in your d
 const STORE_KEY = 'fsel_tracker_state_v2';
 const POLL_MS = 25000;
 const STEP_DEFS = [
-  { id: 'cage', name: 'Cage' }, { id: 'formwork', name: 'Formwork' }, { id: 'cast', name: 'Cast' },
-  { id: 'cure', name: 'Cure' }, { id: 'condition', name: 'Condition' }, { id: 'test', name: 'Test' }
+  { id: 'formwork', name: 'Formwork' }, { id: 'cage', name: 'Cage' }, { id: 'cast', name: 'Cast' },
+  { id: 'condition', name: 'Condition' }, { id: 'test', name: 'Test' }
 ];
-const DEFAULT_WEIGHTS = { cage: 1, formwork: 1, cast: 1, cure: 1, condition: 3, test: 2 };
+const DEFAULT_WEIGHTS = { formwork: 1, cage: 1, cast: 1, condition: 3, test: 2 };
 const STATUS_ORDER = ['pending', 'active', 'done'];
 const STATUS_LABEL = { pending: 'Not Started', active: 'In Progress', done: 'Done' };
 const STATUS_VALUE = { pending: 0, active: 0.5, done: 1 };
 const ORDER_ORDER = ['ordered', 'transit', 'delivered', 'delayed'];
 const ORDER_LABEL = { ordered: 'Ordered', transit: 'In Transit', delivered: 'Delivered', delayed: 'Delayed' };
-const SEV_LABEL = { N: 'None', M: 'Mild', S: 'Severe' };
+const SEV_LABEL = { N: 'None', M: 'Mild', Mo: 'Moderate', S: 'Severe' };
+const RT1_BARS = ['#5', '#7', '#11'];
+const RT1_COVERS = ['1.5"', '2.5"'];
+const SEV_GEN = {
+  Control:  { csr: 'N',  asr: 'N',  ftc: 'N', beams: 1 },
+  Mild:     { csr: 'M',  asr: 'M',  ftc: 'N', beams: 2 },
+  Moderate: { csr: 'Mo', asr: 'Mo', ftc: 'N', beams: 2 },
+  Severe:   { csr: 'S',  asr: 'S',  ftc: 'N', beams: 2 }
+};
+const TANK_CAP = 6;
+/* projection durations (days). cast includes the cure period. */
+const STEP_DAYS = { formwork: 3, cage: 5, cast: 28, test: 4 };
+/* expected conditioning days by bar x severity (governing max of ASR/CSR) */
+const COND_DAYS = {
+  '#5':  { M: 50,  Mo: 78,  S: 121 },
+  '#7':  { M: 62,  Mo: 97,  S: 131 },
+  '#11': { M: 102, Mo: 160, S: 218 }
+};
 /* Default passcode: FSEL2026 (change it from the unlocked menu) */
 const DEFAULT_PASS_HASH = 'edec4fbe684b5f98bd4509dce6fc3fc9381836d22588547d117583c6279f668e';
 
@@ -416,6 +528,21 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const nowStamp = () => new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const parseDay = (s) => (s ? new Date(s + 'T00:00:00') : null);
 const DAY = 86400000;
+function todayISO() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function condDays(s) {
+  const sevs = ['csr', 'asr'].map((k) => (s.sev || {})[k] || 'N').filter((x) => x !== 'N');
+  if (!sevs.length) return 0;
+  const rank = { M: 1, Mo: 2, S: 3 };
+  const gov = sevs.reduce((a, b) => (rank[b] || 0) > (rank[a] || 0) ? b : a, sevs[0]);
+  const tbl = (state.condDur || COND_DAYS)[s.bar];
+  return tbl ? (tbl[gov] || 0) : 0;
+}
+function projectEnd(startISO, s) {
+  const total = STEP_DAYS.formwork + STEP_DAYS.cage + STEP_DAYS.cast + STEP_DAYS.test + condDays(s);
+  const d = new Date(startISO + 'T00:00:00');
+  d.setDate(d.getDate() + total);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function toast(msg, kind = '') {
@@ -581,9 +708,12 @@ let editMode = false;       /* session-only; never persisted */
 let currentTab = 'overview';
 let phaseFilter = 'all';
 let activityFilter = 'all';
+let mtxBar = 'all', mtxCover = 'all', mtxSev = 'all';
+let condSevSel = 'M';
 let lensStep = null;
 let modalOpen = false;
 let pendingRemote = null;   /* remote update held while a modal is open */
+let pendingImport = null;   /* board awaiting restore confirmation */
 
 const blankSteps = () => Object.fromEntries(STEP_DEFS.map((s) => [s.id, 'pending']));
 const blankSev = () => ({ csr: 'N', asr: 'N', ftc: 'N' });
@@ -592,36 +722,37 @@ function defaultState() {
   const ph = {};
   ['RT1', 'RT2', 'RT3', 'RT4'].forEach((n) => { ph[n] = uid(); });
   const phases = Object.entries(ph).map(([name, id]) => ({ id, name }));
-  const mk = (phase, batch, bar, cover, sev, beams, start, end, steps) => ({
+  const mk = (phase, batch, bar, cover, sev, beams, start, end, steps, stepDates) => ({
     id: uid(), phaseId: ph[phase], batch, bar, cover, sev, beams, start, end,
-    steps: { ...blankSteps(), ...(steps || {}) }
+    steps: { ...blankSteps(), ...(steps || {}) }, stepDates: stepDates || {}, stepStarted: {}
   });
   return {
     passHash: DEFAULT_PASS_HASH,
     updatedAt: Date.now(),
     weights: { ...DEFAULT_WEIGHTS },
+    condDur: JSON.parse(JSON.stringify(COND_DAYS)),
     phases,
     series: [
       mk('RT1', 1, '#5', '1.5"', { csr: 'N', asr: 'N', ftc: 'N' }, 2, '2026-05-04', '2026-10-30',
-        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' }),
+        { formwork: 'done', cage: 'done', cast: 'active' }, { formwork: '2026-05-07', cage: '2026-05-13' }),
       mk('RT1', 1, '#5', '1.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-04', '2027-12-17',
-        { cage: 'done', formwork: 'done', cast: 'done', cure: 'active' }),
-      mk('RT1', 1, '#5', '2.5"', { csr: 'M', asr: 'M', ftc: 'N' }, 2, '2026-05-11', '2027-12-17',
-        { cage: 'done', formwork: 'active' }),
+        { formwork: 'done', cage: 'done', cast: 'active' }, { formwork: '2026-05-07', cage: '2026-05-13' }),
+      mk('RT1', 1, '#5', '2.5"', { csr: 'Mo', asr: 'Mo', ftc: 'N' }, 2, '2026-05-11', '2027-12-17',
+        { formwork: 'done', cage: 'active' }, { formwork: '2026-05-14' }),
       mk('RT1', 2, '#7', '1.5"', { csr: 'S', asr: 'M', ftc: 'N' }, 2, '2026-07-06', '2028-02-18',
-        { cage: 'active' }),
+        { formwork: 'active' }),
       mk('RT1', 2, '#7', '2.5"', { csr: 'M', asr: 'S', ftc: 'N' }, 2, '2026-07-06', '2028-02-18', {}),
       mk('RT1', 3, '#11', '1.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {}),
       mk('RT1', 3, '#11', '2.5"', { csr: 'S', asr: 'S', ftc: 'N' }, 2, '2026-08-17', '2028-04-28', {})
     ],
     orders: [
-      { id: uid(), item: 'Jobe-Newman reactive fine aggregate', vendor: 'TX aggregate supplier', qty: '6 CY',
-        phaseId: ph.RT1, ordered: '2026-04-20', expected: '2026-05-08', status: 'delivered', notes: '' },
-      { id: uid(), item: 'ENPAC 5550 conditioning tanks', vendor: 'ENPAC', qty: '2 EA',
+      { id: uid(), item: 'Jobe-Newman reactive fine aggregate', vendor: 'TX aggregate supplier', qty: '6 CY', cost: 1850,
+        phaseId: ph.RT1, ordered: '2026-04-20', expected: '2026-05-08', deliveryDate: '2026-05-08', status: 'delivered', notes: '' },
+      { id: uid(), item: 'ENPAC 5550 conditioning tanks', vendor: 'ENPAC', qty: '2 EA', cost: 2380,
         phaseId: ph.RT1, ordered: '2026-05-26', expected: '2026-06-19', status: 'transit', notes: 'Tank 1 = 1.5" cover series, Tank 2 = 2.5" cover series.' },
-      { id: uid(), item: 'NaOH pellets (bath chemistry + alkali boost)', vendor: '', qty: '45 kg',
+      { id: uid(), item: 'NaOH pellets (bath chemistry + alkali boost)', vendor: '', qty: '45 kg', cost: 190,
         phaseId: ph.RT1, ordered: '2026-06-02', expected: '2026-06-26', status: 'ordered', notes: '' },
-      { id: uid(), item: 'NaCl, technical grade', vendor: '', qty: '70 kg',
+      { id: uid(), item: 'NaCl, technical grade', vendor: '', qty: '70 kg', cost: 95,
         phaseId: ph.RT1, ordered: '2026-06-02', expected: '2026-06-26', status: 'ordered', notes: '' }
     ],
     activities: [
@@ -637,7 +768,15 @@ function defaultState() {
 function normalizeState() {
   state.passHash ??= DEFAULT_PASS_HASH;
   state.updatedAt ??= Date.now();
-  state.weights = { ...DEFAULT_WEIGHTS, ...(state.weights || {}) };
+  {
+    const prevW = state.weights || {};
+    state.weights = Object.fromEntries(STEP_DEFS.map((s) => {
+      const v = Number(prevW[s.id]);
+      return [s.id, Number.isFinite(v) && v >= 0 ? v : DEFAULT_WEIGHTS[s.id]];
+    }));
+  }
+  state.condDur = state.condDur || {};
+  Object.keys(COND_DAYS).forEach((bar) => { state.condDur[bar] = { ...COND_DAYS[bar], ...(state.condDur[bar] || {}) }; });
   state.series ??= []; state.orders ??= []; state.activities ??= []; state.log ??= [];
   if (!Array.isArray(state.phases) || !state.phases.length) {
     state.phases = ['RT1', 'RT2', 'RT3', 'RT4'].map((n) => ({ id: uid(), name: n }));
@@ -662,10 +801,13 @@ function normalizeState() {
   };
   state.series.forEach((sr) => {
     migrate(sr);
-    sr.steps = { ...blankSteps(), ...(sr.steps || {}) };
+    const prevSteps = sr.steps || {};
+    sr.steps = Object.fromEntries(STEP_DEFS.map((s) => [s.id, prevSteps[s.id] || 'pending']));
+    sr.stepDates = sr.stepDates || {};
+    sr.stepStarted = sr.stepStarted || {};
     sr.sev = { ...blankSev(), ...(sr.sev || {}) };
   });
-  state.orders.forEach(migrate);
+  state.orders.forEach((o) => { migrate(o); o.deliveryDate ??= ''; o.cost ??= 0; });
   state.activities.forEach(migrate);
   if (phaseFilter !== 'all' && phaseFilter !== '__none' && !state.phases.some((p) => p.id === phaseFilter)) {
     phaseFilter = 'all';
@@ -799,11 +941,14 @@ function render() {
   if (currentTab === 'overview') v.innerHTML = renderOverview();
   else if (currentTab === 'matrix') v.innerHTML = renderMatrix();
   else if (currentTab === 'timeline') v.innerHTML = renderTimeline();
+  else if (currentTab === 'tanks') v.innerHTML = renderTanks();
   else if (currentTab === 'orders') v.innerHTML = renderOrders();
+  else if (currentTab === 'expenses') v.innerHTML = renderExpenses();
   else v.innerHTML = renderActivities();
   void v.offsetWidth;            /* restart the view-entrance animation */
   v.classList.add('vin');
   tweenCounts();
+  animateHeroTotal();
 }
 
 /* Count-up animation for KPI numbers */
@@ -821,6 +966,27 @@ function tweenCounts() {
     };
     requestAnimationFrame(step);
   });
+}
+
+function animateHeroTotal() {
+  const host = document.querySelector('.hero-total');
+  if (!host) return;
+  const target = parseFloat(host.dataset.total) || 0;
+  const intEl = host.querySelector('.ht-int');
+  const decEl = host.querySelector('.ht-dec');
+  const paint = (v) => {
+    const w = Math.floor(v);
+    intEl.textContent = w.toLocaleString('en-US');
+    if (decEl) decEl.textContent = '.' + String(Math.round((v - w) * 100)).padStart(2, '0');
+  };
+  if (reducedMotion() || target <= 0) { paint(target); return; }
+  const t0 = performance.now(), dur = 850;
+  const tick = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    paint(target * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(tick); else paint(target);
+  };
+  requestAnimationFrame(tick);
 }
 
 function renderPhasebar() {
@@ -843,7 +1009,6 @@ function renderPipeline() {
     return `<div class="stage ${lensStep === s.id ? 'sel' : ''}" data-band="${band}" data-action="lens" data-step="${s.id}"
       style="--i:${i}" role="button" tabindex="0" title="Click to see series at this step">
       <div class="s-name">${s.name}</div>
-      <div class="s-w">WEIGHT \u00D7${stepW(s.id)}</div>
       <div class="s-pct">${p}%</div>
       <div class="s-bar"><div class="s-fill" style="width:${p}%"></div></div>
     </div>`;
@@ -859,7 +1024,7 @@ function renderPipeline() {
         : '<div class="none">none</div>';
       return `<div class="lens-col ${st}"><h4>${STATUS_LABEL[st]} (${items.length})</h4>${list}</div>`;
     }).join('');
-    lens = `<div class="lens"><h3>LENS \u2014 ${def.name.toUpperCase()} \u00B7 WEIGHT \u00D7${stepW(lensStep)}</h3>
+    lens = `<div class="lens"><h3>LENS \u2014 ${def.name.toUpperCase()}</h3>
       <div class="lens-cols">${cols}</div></div>`;
   }
   return `<div class="pipeline">${stages}</div>${lens}`;
@@ -881,20 +1046,44 @@ function renderOverview() {
       <div class="kpi ${late ? 'alert' : 'active'}" style="--d:200ms"><b>${late ? late : soon}</b><small>${late ? 'Orders Overdue' : 'Arriving \u226414 Days'}</small></div>
     </div>
     <div class="panel corners" style="--d:120ms"><span class="c"></span>
-      <div class="panel-title">Process Pipeline \u2014 click a step to inspect</div>
       ${renderPipeline()}
     </div>`;
 }
 
+function seriesSevTokens(sr) {
+  const v = ['csr', 'asr', 'ftc'].map((k) => (sr.sev || {})[k] || 'N').filter((x) => x !== 'N');
+  return v.length ? [...new Set(v)] : ['control'];
+}
 function renderMatrix() {
   const addBtn = editMode ? `<button class="btn-go" data-action="series-modal">+ Add Series</button>` : '';
+  const genBtn = editMode ? `<button class="btn-ghost" data-action="generate-modal">\u26A1 Generate RT1</button>` : '';
+  const wBtn = editMode ? `<button class="btn-ghost" data-action="manage-weights">Weights</button>` : '';
+  const titleRight = `<span class="right">${genBtn}${wBtn}${addBtn}</span>`;
   const list = fSeries();
   if (!list.length) {
     return `<div class="panel corners"><span class="c"></span>
-      <div class="panel-title">Series \u00D7 Process Matrix <span class="right">${addBtn}</span></div>
-      <div class="empty">No series in this phase yet.<br>${editMode ? 'Add a series above.' : 'Unlock edit mode to add series.'}</div></div>`;
+      <div class="panel-title">Series \u00D7 Process Matrix ${titleRight}</div>
+      <div class="empty">No series in this phase yet.<br>${editMode ? 'Add a series, or use \u26A1 Generate RT1 to build the standard set.' : 'Unlock edit mode to add series.'}</div></div>`;
   }
-  const rows = list.map((sr, i) => {
+
+  const bars = [...new Set(list.map((s) => s.bar).filter(Boolean))];
+  const covers = [...new Set(list.map((s) => s.cover).filter(Boolean))];
+  const sevPresent = [...new Set(list.flatMap(seriesSevTokens))];
+  const sevF = ['control', 'M', 'Mo', 'S'].filter((t) => sevPresent.includes(t));
+  const chip = (grp, val, label, cur) => `<button class="chip sm ${cur === val ? 'on' : ''}" data-action="mtx-${grp}" data-val="${esc(val)}">${esc(label)}</button>`;
+  const hasF = bars.length > 1 || covers.length > 1 || sevF.length > 1;
+  const filterBar = hasF ? `<div class="mtxfilters">
+    ${bars.length > 1 ? `<span class="mf-label">Bar</span>${['all', ...bars].map((v) => chip('bar', v, v === 'all' ? 'All' : v, mtxBar)).join('')}` : ''}
+    ${covers.length > 1 ? `<span class="mf-label">Cover</span>${['all', ...covers].map((v) => chip('cover', v, v === 'all' ? 'All' : v, mtxCover)).join('')}` : ''}
+    ${sevF.length > 1 ? `<span class="mf-label">Severity</span>${['all', ...sevF].map((v) => chip('sev', v, v === 'all' ? 'All' : (v === 'control' ? 'Control' : SEV_LABEL[v]), mtxSev)).join('')}` : ''}
+  </div>` : '';
+
+  const flist = list.filter((s) =>
+    (mtxBar === 'all' || s.bar === mtxBar) &&
+    (mtxCover === 'all' || s.cover === mtxCover) &&
+    (mtxSev === 'all' || seriesSevTokens(s).includes(mtxSev)));
+
+  const rows = flist.map((sr, i) => {
     const cells = STEP_DEFS.map((s) => {
       const st = sr.steps[s.id] || 'pending';
       return `<td><button class="cell-chip ${st}" data-action="cycle-step" data-series="${sr.id}" data-step="${s.id}"
@@ -913,14 +1102,25 @@ function renderMatrix() {
       ${actions}</tr>`;
   }).join('');
 
-  return `<div class="panel corners ${editMode ? 'editable' : ''}"><span class="c"></span>
-    <div class="panel-title">Series \u00D7 Process Matrix
-      <span class="right">${editMode ? '<button class="btn-ghost" data-action="manage-weights">Weights</button>' : ''}${addBtn}</span></div>
-    <div class="table-scroll"><table class="matrix">
+  const body = flist.length ? `<div class="table-scroll"><table class="matrix">
       <thead><tr><th>Series</th>${STEP_DEFS.map((s) => `<th>${s.name} \u00D7${stepW(s.id)}</th>`).join('')}<th>Weighted</th><th></th></tr></thead>
-      <tbody>${rows}</tbody></table></div></div>`;
+      <tbody>${rows}</tbody></table></div>`
+    : `<div class="empty">No series match these filters.</div>`;
+
+  return `<div class="panel corners ${editMode ? 'editable' : ''}"><span class="c"></span>
+    <div class="panel-title">Series \u00D7 Process Matrix ${titleRight}</div>
+    ${filterBar}
+    ${body}</div>`;
 }
 
+function currentStage(sr) {
+  const active = STEP_DEFS.find((st) => (sr.steps || {})[st.id] === 'active');
+  if (active) return active.name + ' in progress';
+  const pending = STEP_DEFS.find((st) => (sr.steps || {})[st.id] === 'pending');
+  if (!pending) return 'Complete';
+  const anyDone = STEP_DEFS.some((st) => (sr.steps || {})[st.id] === 'done');
+  return anyDone ? 'Next: ' + pending.name : 'Not started';
+}
 function renderTimeline() {
   const list = fSeries();
   const dated = list.filter((sr) => sr.start && sr.end);
@@ -946,8 +1146,12 @@ function renderTimeline() {
       const width = Math.max(0.5, ((e - s) / range) * 100);
       const p = seriesPct(sr);
       const overdue = today > e && p < 100;
-      track = `<div class="g-track">
-        <div class="g-bar ${overdue ? 'overdue' : ''}" style="left:${left}%; width:${width}%; --d:${d}">
+      const marks = STEP_DEFS.filter((st) => (sr.stepDates || {})[st.id]).map((st) => {
+        const x = ((+parseDay(sr.stepDates[st.id]) - min) / range) * 100;
+        return (x < 0 || x > 100) ? '' : `<span class="gmark" style="left:${x}%" title="${st.name} done ${sr.stepDates[st.id]}"></span>`;
+      }).join('');
+      track = `<div class="g-track">${marks}
+        <div class="g-bar ${overdue ? 'overdue' : ''}" title="${esc(currentStage(sr))}" style="left:${left}%; width:${width}%; --d:${d}">
           <div class="g-fill" style="width:${p}%"></div><span class="g-pct">${p}%</span>
         </div></div>`;
     } else {
@@ -965,6 +1169,108 @@ function renderTimeline() {
       <div class="g-axis"><span>${fmt(min)}</span><span class="t">TODAY \u00B7 ${fmt(today)}</span><span>${fmt(max)}</span></div>
       <div class="g-rows">${rows}<div class="today-line" style="left:calc(var(--glabel) + 14px + (100% - var(--glabel) - 14px) * ${(todayPct / 100).toFixed(4)})"></div></div>
     </div></div></div>`;
+}
+
+const SEV_COLOR = { M: 'var(--green)', Mo: 'var(--amber)', S: 'var(--red)' };
+function govSev(s) {
+  const sevs = ['csr', 'asr'].map((k) => (s.sev || {})[k] || 'N').filter((x) => x !== 'N');
+  if (!sevs.length) return null;
+  const rank = { M: 1, Mo: 2, S: 3 };
+  return sevs.reduce((a, b) => (rank[b] || 0) > (rank[a] || 0) ? b : a, sevs[0]);
+}
+function actualCond(bar, sevCode, list) {
+  const matches = list.filter((s) => s.bar === bar && govSev(s) === sevCode && (s.stepStarted || {}).condition && (s.stepDates || {}).condition);
+  if (!matches.length) return null;
+  const durs = matches.map((s) => Math.max(0, Math.round((parseDay(s.stepDates.condition) - parseDay(s.stepStarted.condition)) / DAY)));
+  return { days: Math.round(durs.reduce((a, b) => a + b, 0) / durs.length), n: matches.length };
+}
+function renderCondDurations() {
+  const list = fSeries();
+  const sevs = [['M', 'Mild'], ['Mo', 'Moderate'], ['S', 'Severe']];
+  const sevList = sevs.map(([code, label]) => `<button class="cd-sev ${condSevSel === code ? 'on' : ''}" data-action="cond-sev-sel" data-val="${code}" style="--sc:${SEV_COLOR[code]}">
+      <span class="cd-sev-dot"></span>${label}</button>`).join('');
+  const C = 2 * Math.PI * 38, MAXSCALE = 220;
+  const rings = RT1_BARS.map((bar) => {
+    const exp = ((state.condDur || COND_DAYS)[bar] || {})[condSevSel] || 0;
+    const act = actualCond(bar, condSevSel, list);
+    const off = C * (1 - (act ? Math.min(1, act.days / MAXSCALE) : 0));
+    return `<div class="cd-ring ${act ? '' : 'nodata'}" style="--sc:${SEV_COLOR[condSevSel]}">
+      <div class="cd-gauge">
+        <svg viewBox="0 0 90 90"><circle class="cdr-track" cx="45" cy="45" r="38"/><circle class="cdr-arc" cx="45" cy="45" r="38" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${off.toFixed(1)}"/></svg>
+        <div class="cd-center">${act ? `<b>${act.days}</b><small>days</small>` : `<span class="cd-nodata">NO DATA</span>`}</div>
+      </div>
+      <div class="cd-bar-lbl">${bar}</div>
+      <div class="cd-exp">expected ${exp} d${act && act.n > 1 ? ` \u00B7 ${act.n} spec` : ''}</div>
+    </div>`;
+  }).join('');
+  return `<div class="panel corners"><span class="c"></span>
+    <div class="panel-title">Conditioning Durations${editMode ? ' <span class="right"><button class="btn-sm" data-action="cond-edit-modal">\u270E Edit expected</button></span>' : ''}</div>
+    <div class="cd-wrap">
+      <div class="cd-sevlist">${sevList}</div>
+      <div class="cd-detail">${rings}</div>
+    </div>
+  </div>`;
+}
+
+function openCondModal() {
+  if (!requireEdit()) return;
+  const t = state.condDur || COND_DAYS;
+  const rows = RT1_BARS.map((bar) => {
+    const cells = ['M', 'Mo', 'S'].map((sev) => `<div class="field"><label>${bar} \u00B7 ${SEV_LABEL[sev]}</label><input type="number" min="0" id="cd_${bar.replace('#', '')}_${sev}" value="${(t[bar] || {})[sev] || 0}"></div>`).join('');
+    return `<div class="field-row3">${cells}</div>`;
+  }).join('');
+  openModal(`<h2>Expected Conditioning Days</h2>
+    <div class="note">Governing soak days per bar size \u00D7 severity. Used to project the End date on newly generated series. Editing these does not change dates already set on existing series.</div>
+    ${rows}
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="save-cond-durations">Save</button>
+    </div>`);
+}
+async function saveCondDurations() {
+  state.condDur = state.condDur || {};
+  RT1_BARS.forEach((bar) => {
+    state.condDur[bar] = state.condDur[bar] || {};
+    ['M', 'Mo', 'S'].forEach((sev) => {
+      const v = parseFloat($(`#cd_${bar.replace('#', '')}_${sev}`).value);
+      state.condDur[bar][sev] = Number.isFinite(v) && v >= 0 ? v : (state.condDur[bar][sev] || 0);
+    });
+  });
+  pushLog('Expected conditioning durations updated.');
+  closeModal();
+  render();
+  await saveState();
+  toast('CONDITIONING DAYS SAVED');
+}
+
+function renderTanks() {
+  const list = fSeries();
+  const tanks = [{ n: 'Tank 1', cover: '1.5"' }, { n: 'Tank 2', cover: '2.5"' }];
+  const sevShort = (s) => ['csr', 'asr', 'ftc'].filter((k) => (s.sev || {})[k] !== 'N').map((k) => k.toUpperCase() + ' ' + SEV_LABEL[s.sev[k]]).join(' \u00B7 ') || 'Control';
+  const panels = tanks.map((t) => {
+    const series = list.filter((s) => s.cover === t.cover);
+    const active = series.filter((s) => (s.steps.condition || 'pending') === 'active');
+    const queued = series.filter((s) => (s.steps.condition || 'pending') === 'pending' && (s.steps.cast || 'pending') === 'done');
+    const done = series.filter((s) => (s.steps.condition || 'pending') === 'done');
+    const used = active.length;
+    const over = used > TANK_CAP;
+    const pct = Math.min(100, Math.round(used / TANK_CAP * 100));
+    let slots = '';
+    const n = Math.max(TANK_CAP, used);
+    for (let i = 0; i < n; i++) {
+      const s = active[i];
+      slots += s
+        ? `<div class="slot filled ${i >= TANK_CAP ? 'over' : ''}"><div class="slot-id">${srLabel(s)}</div><div class="slot-sev">${esc(sevShort(s))}</div></div>`
+        : `<div class="slot"><span>OPEN</span></div>`;
+    }
+    return `<div class="panel corners"><span class="c"></span>
+      <div class="panel-title">${t.n} \u00B7 ${t.cover} Cover <span class="right ${over ? 'over' : ''}">${used} / ${TANK_CAP} slots${over ? ' \u00B7 OVER CAPACITY' : ''}</span></div>
+      <div class="tbar"><i class="${over ? 'over' : ''}" style="width:${pct}%"></i></div>
+      <div class="slots">${slots}</div>
+      <div class="tmeta"><span>Queued: <b>${queued.length}</b></span><span>Conditioned: <b>${done.length}</b></span></div>
+    </div>`;
+  }).join('');
+  return `${panels}${renderCondDurations()}`;
 }
 
 function renderOrders() {
@@ -989,7 +1295,7 @@ function renderOrders() {
     return `<div class="order ${editMode ? 'editable' : ''}" data-st="${o.status}" style="--d:${Math.min(i * 40, 400)}ms">
       <div>
         <div class="o-title">${esc(o.item)}</div>
-        <div class="o-meta">${o.vendor ? esc(o.vendor) + ' \u00B7 ' : ''}${o.qty ? esc(o.qty) + ' \u00B7 ' : ''}${esc(phaseName(o.phaseId))}${o.ordered ? ' \u00B7 ORDERED ' + esc(o.ordered) : ''}${o.expected ? ' \u00B7 ETA ' + esc(o.expected) : ''}</div>
+        <div class="o-meta">${o.vendor ? esc(o.vendor) + ' \u00B7 ' : ''}${o.qty ? esc(o.qty) + ' \u00B7 ' : ''}${o.cost ? fmtMoney(o.cost) + ' \u00B7 ' : ''}${esc(phaseName(o.phaseId))}${o.ordered ? ' \u00B7 ORDERED ' + esc(o.ordered) : ''}${o.expected ? ' \u00B7 ETA ' + esc(o.expected) : ''}${o.status === 'delivered' && o.deliveryDate ? ' \u00B7 DELIVERED ' + esc(o.deliveryDate) : ''}</div>
       </div>
       <div class="o-right">
         <span class="eta ${eta.cls}">${eta.txt}</span>
@@ -1002,7 +1308,7 @@ function renderOrders() {
   }).join('') : `<div class="empty">No orders in this phase yet.<br>${editMode ? 'Log the first order above.' : 'Unlock edit mode to log orders.'}</div>`;
 
   return `<div class="panel corners"><span class="c"></span>
-    <div class="panel-title">Materials &amp; Orders <span class="right">${addBtn}</span></div>
+    <div class="panel-title">Orders <span class="right"><button class="btn-sm" data-action="export-orders">\u2193 Export CSV</button>${addBtn}</span></div>
     <div class="radar">
       <span class="rchip late" style="--d:0ms"><b>${late}</b>OVERDUE</span>
       <span class="rchip soon" style="--d:60ms"><b>${soon}</b>ARRIVING \u226414D</span>
@@ -1010,6 +1316,173 @@ function renderOrders() {
       <span class="rchip in" style="--d:180ms"><b>${delivered}</b>DELIVERED</span>
     </div>
     ${cards}</div>`;
+}
+
+function fmtMoney(n) { return (Number(n) || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }); }
+function parseQty(s) {
+  const str = String(s || '').trim();
+  const m = str.match(/^([\d.,]+)\s*(.*)$/);
+  if (!m) return { num: null, unit: str };
+  const num = parseFloat(m[1].replace(/,/g, ''));
+  return { num: Number.isFinite(num) ? num : null, unit: (m[2] || '').trim() };
+}
+function csvStamp() { return new Date().toISOString().slice(0, 10); }
+function downloadBlob(filename, text, mime) {
+  const blob = new Blob([text], { type: (mime || 'text/plain') + ';charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 150);
+}
+function downloadCSV(filename, rows) {
+  const cell = (v) => { const s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = rows.map((r) => r.map(cell).join(',')).join('\r\n');
+  downloadBlob(filename, '\ufeff' + csv, 'text/csv');
+  toast('CSV EXPORTED');
+}
+function exportBoard() {
+  try { downloadBlob('fsel_board_' + csvStamp() + '.json', JSON.stringify(state, null, 2), 'application/json'); toast('BOARD EXPORTED'); }
+  catch (e) { toast('EXPORT FAILED', 'bad'); }
+}
+function importBoard() {
+  if (!requireEdit()) return;
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try { parsed = JSON.parse(reader.result); } catch (e) { toast('INVALID JSON FILE', 'bad'); return; }
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.series)) { toast('NOT A VALID BOARD FILE', 'bad'); return; }
+      confirmImport(parsed);
+    };
+    reader.onerror = () => toast('COULD NOT READ FILE', 'bad');
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+function confirmImport(parsed) {
+  pendingImport = parsed;
+  const n = (parsed.series || []).length, o = (parsed.orders || []).length, a = (parsed.activities || []).length;
+  openModal(`<h2>Restore Board</h2>
+    <div class="note">This replaces the entire board${Store.mode !== 'local' ? ' for all viewers' : ''} with the imported file: <b style="color:var(--text)">${n} series, ${o} orders, ${a} activities</b>. This cannot be undone \u2014 export a backup first if you\u2019re unsure.</div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-danger" data-action="do-import">Replace Board</button>
+    </div>`);
+}
+async function doImport() {
+  if (!pendingImport) { closeModal(); return; }
+  state = pendingImport; pendingImport = null;
+  normalizeState();
+  state.updatedAt = Date.now();
+  pendingRemote = null;   /* imported+saved board is authoritative */
+  closeModal();
+  render();
+  await saveState();
+  toast('BOARD RESTORED');
+}
+function exportOrdersCSV() {
+  const rows = [['Item', 'Vendor', 'Quantity', 'Cost (USD)', 'Phase', 'Status', 'Order Date', 'Expected Delivery', 'Delivery Date', 'Notes']];
+  fOrders().forEach((o) => rows.push([
+    o.item, o.vendor, o.qty, (Number(o.cost) || 0).toFixed(2),
+    phaseName(o.phaseId), ORDER_LABEL[o.status] || o.status,
+    o.ordered, o.expected, o.deliveryDate || '', o.notes
+  ]));
+  if (rows.length === 1) { toast('NO ORDERS TO EXPORT', 'warn'); return; }
+  downloadCSV('orders_' + csvStamp() + '.csv', rows);
+}
+function exportExpensesCSV() {
+  const items = {};
+  fOrders().forEach((o) => {
+    const name = (o.item || '').trim(); if (!name) return;
+    const key = name.toLowerCase();
+    const it = items[key] || (items[key] = { name, cost: 0, units: {} });
+    it.cost += Number(o.cost) || 0;
+    const { num, unit } = parseQty(o.qty); if (num != null) { const u = unit || 'ea'; it.units[u] = (it.units[u] || 0) + num; }
+  });
+  const list = Object.values(items).sort((a, b) => b.cost - a.cost);
+  if (!list.length) { toast('NO EXPENSES TO EXPORT', 'warn'); return; }
+  const rows = [['Item', 'Quantity', 'Total Cost (USD)']];
+  list.forEach((it) => {
+    const qty = Object.entries(it.units).map(([u, n]) => `${+n.toFixed(2)} ${u}`).join(' + ');
+    rows.push([it.name, qty, it.cost.toFixed(2)]);
+  });
+  downloadCSV('expenses_' + csvStamp() + '.csv', rows);
+}
+
+function renderExpenses() {
+  const ords = fOrders();
+  const total = ords.reduce((a, o) => a + (Number(o.cost) || 0), 0);
+
+  /* consolidate repeated orders of the same item */
+  const items = {};
+  ords.forEach((o) => {
+    const name = (o.item || '').trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    const it = items[key] || (items[key] = { key, name, cost: 0, units: {}, orders: [] });
+    it.cost += Number(o.cost) || 0;
+    it.orders.push(o);
+    const { num, unit } = parseQty(o.qty);
+    if (num != null) { const u = unit || 'ea'; it.units[u] = (it.units[u] || 0) + num; }
+  });
+  const itemRows = Object.values(items).sort((a, b) => b.cost - a.cost);
+  const qtyStr = (units) => {
+    const e = Object.entries(units);
+    return e.length ? e.map(([u, n]) => `${+n.toFixed(2)} ${u}`).join(' \u00B7 ') : '\u2014';
+  };
+  const bodyRows = itemRows.map((it) => `<tr class="xrow" data-action="expense-item" data-key="${esc(it.key)}">
+      <td><span class="xcaret">\u25B8</span>${esc(it.name)}</td>
+      <td class="num">${esc(qtyStr(it.units))}</td>
+      <td class="num cost">${fmtMoney(it.cost)}</td></tr>`).join('');
+
+  const table = itemRows.length ? `
+    <table class="xtable">
+      <thead><tr><th>Item</th><th class="num">Quantity</th><th class="num">Total Cost</th></tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>` : `<div class="empty">No orders in this phase yet.<br>Add a Cost to an order (Orders tab) to see it here.</div>`;
+
+  const whole = Math.floor(total);
+  const cents = String(Math.round((total - whole) * 100)).padStart(2, '0');
+
+  return `
+    <div class="hero-total corners" data-total="${total}"><span class="c"></span><i class="ht-sheen"></i>
+      <div class="ht-label">Total Spent</div>
+      <div class="ht-value"><span class="ht-cur">$</span><span class="ht-int">${whole.toLocaleString('en-US')}</span><span class="ht-dec">.${cents}</span></div>
+    </div>
+    <div class="panel corners" style="--d:120ms"><span class="c"></span>
+      <div class="xtoolbar"><button class="btn-sm" data-action="export-expenses">\u2193 Export CSV</button></div>
+      <div class="table-scroll">${table}</div>
+    </div>`;
+}
+
+function openExpenseDetail(key) {
+  const ords = fOrders().filter((o) => (o.item || '').trim().toLowerCase() === key);
+  if (!ords.length) return;
+  const showPhase = phaseFilter === 'all';
+  const name = ords[0].item;
+  const total = ords.reduce((a, o) => a + (Number(o.cost) || 0), 0);
+  const units = {};
+  ords.forEach((o) => { const { num, unit } = parseQty(o.qty); if (num != null) { const u = unit || 'ea'; units[u] = (units[u] || 0) + num; } });
+  const qtyStr = Object.entries(units).map(([u, n]) => `${+n.toFixed(2)} ${u}`).join(' \u00B7 ') || '\u2014';
+  const purchaseDate = (o) => o.ordered || o.deliveryDate || o.expected || '';
+  const hist = ords.slice().sort((a, b) => String(purchaseDate(a)).localeCompare(String(purchaseDate(b))));
+  const rows = hist.map((o) => `<tr>
+    <td>${esc(purchaseDate(o) || '\u2014')}</td>
+    ${showPhase ? `<td>${esc(phaseName(o.phaseId))}</td>` : ''}
+    <td class="num">${esc(o.qty || '\u2014')}</td>
+    <td class="num cost">${fmtMoney(o.cost)}</td></tr>`).join('');
+  openModal(`<h2>Purchase History</h2>
+    <div class="xd-item">${esc(name)}</div>
+    <div class="xd-sum"><span>${esc(qtyStr)}</span><span>${hist.length} order${hist.length > 1 ? 's' : ''}</span><span class="cost">${fmtMoney(total)}</span></div>
+    <div class="table-scroll"><table class="xsub xd-table">
+      <thead><tr><th>Date Ordered</th>${showPhase ? '<th>Phase</th>' : ''}<th class="num">Quantity</th><th class="num">Cost</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="modal-actions"><button class="btn-go" data-action="close-modal">Close</button></div>`, true);
 }
 
 function renderActivities() {
@@ -1054,8 +1527,14 @@ async function cycleStep(seriesId, stepId) {
   if (!requireEdit()) return;
   const sr = state.series.find((s) => s.id === seriesId);
   if (!sr) return;
-  sr.steps[stepId] = nextOf(STATUS_ORDER, sr.steps[stepId] || 'pending');
-  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 ${STATUS_LABEL[sr.steps[stepId]]}`);
+  const ns = nextOf(STATUS_ORDER, sr.steps[stepId] || 'pending');
+  sr.steps[stepId] = ns;
+  sr.stepDates = sr.stepDates || {};
+  sr.stepStarted = sr.stepStarted || {};
+  if (ns === 'active') { if (!sr.stepStarted[stepId]) sr.stepStarted[stepId] = todayISO(); delete sr.stepDates[stepId]; }
+  else if (ns === 'done') { if (!sr.stepStarted[stepId]) sr.stepStarted[stepId] = todayISO(); sr.stepDates[stepId] = todayISO(); }
+  else { delete sr.stepStarted[stepId]; delete sr.stepDates[stepId]; }
+  pushLog(`${srLabelPlain(sr)} \u2014 ${STEP_DEFS.find((s) => s.id === stepId).name} \u2192 ${STATUS_LABEL[ns]}`);
   render();
   await saveState();
 }
@@ -1079,9 +1558,10 @@ async function cycleOrder(id) {
 }
 
 /* ----------------------------- MODALS ----------------------------- */
-function openModal(html) {
+function openModal(html, wide) {
   modalOpen = true;
   const box = $('#modalBox');
+  box.classList.toggle('wide', !!wide);
   box.innerHTML = '<span class="c"></span>' + html;
   $('#overlay').classList.add('show');
   const first = box.querySelector('input, select, textarea');
@@ -1096,6 +1576,15 @@ $('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modalOpen) closeModal();
   if (e.key === 'Enter' && modalOpen && e.target && e.target.id === 'passInput') tryUnlock();
+  if (e.key === 'Tab' && modalOpen) {
+    const box = $('#modalBox');
+    const foci = [...box.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter((el) => !el.disabled && el.offsetParent !== null);
+    if (foci.length) {
+      const first = foci[0], last = foci[foci.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
 });
 
 function openLockMenu() {
@@ -1106,6 +1595,8 @@ function openLockMenu() {
         <button class="btn-ghost" data-action="phases-modal">Phases</button>
         <button class="btn-ghost" data-action="manage-weights">Step Weights</button>
         <button class="btn-ghost" data-action="passcode-change">Change Passcode</button>
+        <button class="btn-ghost" data-action="export-board">\u2193 Export Board</button>
+        <button class="btn-ghost" data-action="import-board">\u2191 Import Board</button>
         <button class="btn-go" data-action="lock-board">Lock Board</button>
       </div>`);
     return;
@@ -1117,6 +1608,7 @@ function openLockMenu() {
     convenience lock for lab coordination, not a security boundary.</div>
     <div class="modal-actions">
       <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-ghost" data-action="export-board">\u2193 Export Backup</button>
       <button class="btn-go" data-action="try-unlock">Unlock</button>
     </div>`);
 }
@@ -1257,13 +1749,13 @@ function openSeriesModal(id) {
       <div class="field"><label>Cover</label><input id="fCover" maxlength="8" placeholder="1.5&quot;" value="${sr ? esc(sr.cover) : ''}"></div>
     </div>
     <div class="field-row3">
-      <div class="field"><label>CSR</label><select id="fCsr">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.csr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
-      <div class="field"><label>ASR</label><select id="fAsr">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.asr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
-      <div class="field"><label>FTC</label><select id="fFtc">${['N','M','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.ftc : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>CSR</label><select id="fCsr">${['N','M','Mo','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.csr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>ASR</label><select id="fAsr">${['N','M','Mo','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.asr : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
+      <div class="field"><label>FTC</label><select id="fFtc">${['N','M','Mo','S'].map((v) => `<option value="${v}" ${(sr ? sr.sev.ftc : 'N') === v ? 'selected' : ''}>${SEV_LABEL[v]}</option>`).join('')}</select></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Start</label><input type="date" id="fStart" value="${sr ? esc(sr.start || '') : ''}"></div>
-      <div class="field"><label>Expected End</label><input type="date" id="fEnd" value="${sr ? esc(sr.end || '') : ''}"></div>
+      <div class="field"><label>Start Date</label><input type="date" id="fStart" value="${sr ? esc(sr.start || '') : ''}"></div>
+      <div class="field"><label>End Date</label><input type="date" id="fEnd" value="${sr ? esc(sr.end || '') : ''}"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-ghost" data-action="close-modal">Cancel</button>
@@ -1294,6 +1786,55 @@ async function saveSeries(id) {
   toast(id ? 'SERIES UPDATED' : 'SERIES ADDED');
 }
 
+/* --- generate RT1 matrix --- */
+function openGenerateModal() {
+  if (!requireEdit()) return;
+  const rt1 = state.phases.find((p) => String(p.name).toUpperCase() === 'RT1') || state.phases[0] || {};
+  const defPhase = (phaseFilter !== 'all' && phaseFilter !== '__none') ? phaseFilter : (rt1.id || '');
+  const sevOpts = ['Control', 'Mild', 'Moderate', 'Severe'].map((s) => `<option value="${s}">${s}</option>`).join('');
+  openModal(`<h2>Generate RT1 Matrix</h2>
+    <div class="note">Builds the RT1 specimen set for one severity level: 3 bar sizes (#5, #7, #11) \u00D7 2 covers (1.5", 2.5"). Control = 1 beam each; Mild / Moderate / Severe = 2 beams each, with CSR and ASR paired. Start = today; Expected End is projected from the step durations plus the expected conditioning days for each bar/severity. Every date stays editable, and existing series are skipped.</div>
+    <div class="field-row3">
+      <div class="field"><label>Phase</label><select id="genPhase">${phaseOptions(defPhase, false)}</select></div>
+      <div class="field"><label>Severity</label><select id="genSev">${sevOpts}</select></div>
+      <div class="field"><label>Batch</label><input type="number" id="genBatch" min="0" max="99" value="1"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn-go" data-action="do-generate">Generate</button>
+    </div>`);
+}
+async function doGenerateMatrix() {
+  const phaseId = $('#genPhase').value;
+  const sevKey = $('#genSev').value;
+  const batch = Math.max(0, parseInt($('#genBatch').value, 10) || 0);
+  const cfg = SEV_GEN[sevKey];
+  if (!cfg) { closeModal(); return; }
+  let created = 0, skipped = 0;
+  RT1_BARS.forEach((bar) => {
+    RT1_COVERS.forEach((cover) => {
+      const exists = state.series.some((s) =>
+        s.phaseId === phaseId && s.bar === bar && s.cover === cover && Number(s.batch) === batch &&
+        (s.sev || {}).csr === cfg.csr && (s.sev || {}).asr === cfg.asr && (s.sev || {}).ftc === cfg.ftc);
+      if (exists) { skipped++; return; }
+      const start = todayISO();
+      const s = {
+        id: uid(), phaseId, batch, bar, cover,
+        sev: { csr: cfg.csr, asr: cfg.asr, ftc: cfg.ftc },
+        beams: cfg.beams, start, end: '', steps: blankSteps(), stepDates: {}, stepStarted: {}
+      };
+      s.end = projectEnd(start, s);
+      state.series.push(s);
+      created++;
+    });
+  });
+  pushLog(`Generated RT1 ${sevKey} (batch ${batch}): +${created} series${skipped ? ', ' + skipped + ' skipped' : ''}.`);
+  closeModal();
+  render();
+  await saveState();
+  toast(`GENERATED ${created} SERIES${skipped ? ' \u00B7 ' + skipped + ' EXISTED' : ''}`);
+}
+
 /* --- order add/edit --- */
 function openOrderModal(id) {
   if (!requireEdit()) return;
@@ -1303,9 +1844,10 @@ function openOrderModal(id) {
   openModal(`<h2>${o ? 'Edit Order' : 'Log Order'}</h2>
     <div class="field"><label>Item</label>
       <input id="fItem" maxlength="120" placeholder="e.g. NaOH pellets, 45 kg" value="${o ? esc(o.item) : ''}"></div>
-    <div class="field-row">
+    <div class="field-row3">
       <div class="field"><label>Vendor</label><input id="fVendor" maxlength="60" value="${o ? esc(o.vendor) : ''}"></div>
       <div class="field"><label>Quantity</label><input id="fQty" maxlength="30" placeholder="e.g. 2 EA" value="${o ? esc(o.qty) : ''}"></div>
+      <div class="field"><label>Cost (USD)</label><input type="number" id="fCost" min="0" step="0.01" placeholder="0.00" value="${o ? esc(o.cost || '') : ''}"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>Feeds Phase</label><select id="fOPhase">${phaseOptions(defPhase, true)}</select></div>
@@ -1317,20 +1859,30 @@ function openOrderModal(id) {
       <div class="field"><label>Order Date</label><input type="date" id="fOrdered" value="${o ? esc(o.ordered) : ''}"></div>
       <div class="field"><label>Expected Delivery</label><input type="date" id="fExpected" value="${o ? esc(o.expected) : ''}"></div>
     </div>
+    <div class="field" id="deliveryRow"><label>Delivery Date (actual)</label><input type="date" id="fDeliveryDate" value="${o ? esc(o.deliveryDate || '') : ''}"></div>
     <div class="field"><label>Notes</label><textarea id="fONotes" maxlength="400">${o ? esc(o.notes) : ''}</textarea></div>
     <div class="err" id="fErr">ITEM NAME IS REQUIRED</div>
     <div class="modal-actions">
       <button class="btn-ghost" data-action="close-modal">Cancel</button>
       <button class="btn-go" data-action="save-order" data-id="${id || ''}">${o ? 'Save Changes' : 'Log Order'}</button>
     </div>`);
+  const stSel = $('#fOStatus');
+  const dRow = $('#deliveryRow');
+  if (stSel && dRow) {
+    const syncDelivery = () => { dRow.style.display = stSel.value === 'delivered' ? '' : 'none'; };
+    stSel.addEventListener('change', syncDelivery);
+    syncDelivery();
+  }
 }
 async function saveOrder(id) {
   const item = $('#fItem').value.trim();
   if (!item) { $('#fErr').style.display = 'block'; return; }
   const data = {
     item: item.slice(0, 120), vendor: $('#fVendor').value.trim(), qty: $('#fQty').value.trim(),
+    cost: Math.max(0, parseFloat($('#fCost').value) || 0),
     phaseId: $('#fOPhase').value, status: $('#fOStatus').value,
-    ordered: $('#fOrdered').value, expected: $('#fExpected').value, notes: $('#fONotes').value.trim()
+    ordered: $('#fOrdered').value, expected: $('#fExpected').value,
+    deliveryDate: $('#fDeliveryDate').value, notes: $('#fONotes').value.trim()
   };
   if (id) {
     const o = state.orders.find((x) => x.id === id);
@@ -1449,10 +2001,24 @@ document.addEventListener('click', (e) => {
     'lock-menu':      () => openLockMenu(),
     'try-unlock':     () => tryUnlock(),
     'lock-board':     () => lockBoard(),
+    'export-board':   () => exportBoard(),
+    'import-board':   () => importBoard(),
+    'do-import':      () => doImport(),
     'passcode-change':() => openPasscodeChange(),
     'save-passcode':  () => savePasscode(),
     'close-modal':    () => closeModal(),
     'lens':           () => { lensStep = (lensStep === d.step ? null : d.step); render(); },
+    'expense-item':   () => openExpenseDetail(d.key),
+    'export-orders':  () => exportOrdersCSV(),
+    'export-expenses':() => exportExpensesCSV(),
+    'generate-modal': () => openGenerateModal(),
+    'do-generate':    () => doGenerateMatrix(),
+    'mtx-bar':        () => { mtxBar = d.val; render(); },
+    'mtx-cover':      () => { mtxCover = d.val; render(); },
+    'mtx-sev':        () => { mtxSev = d.val; render(); },
+    'cond-sev-sel':   () => { condSevSel = d.val; render(); },
+    'cond-edit-modal':() => openCondModal(),
+    'save-cond-durations': () => saveCondDurations(),
     'cycle-step':     () => cycleStep(d.series, d.step),
     'cycle-activity': () => cycleActivity(d.id),
     'cycle-order':    () => cycleOrder(d.id),
@@ -1495,6 +2061,7 @@ document.addEventListener('keydown', (e) => {
   if (json) {
     try { state = JSON.parse(json); } catch (e) { state = defaultState(); }
     normalizeState();
+    try { if (Store.mode !== 'local' && JSON.stringify(state) !== json) await Store.save(JSON.stringify(state)); } catch (e) { /* best effort */ }
   } else {
     state = defaultState();
     if (Store.mode !== 'local') { try { await Store.save(JSON.stringify(state)); } catch (e) { /* first save */ } }
