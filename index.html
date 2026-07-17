@@ -270,6 +270,40 @@ nav.tabs { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .cd-bar-lbl { font-family:var(--display); font-weight:700; font-size:18px; color:var(--sc); margin-top:8px; }
 .cd-exp { font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:3px; }
 @media (max-width:640px){ .cd-sevlist { flex-direction:row; min-width:0; width:100%; flex-wrap:wrap; } .cd-detail { justify-content:center; width:100%; } }
+.sp-sub { font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; margin:-6px 0 8px; }
+.sp-mass { color:var(--amber); }
+.chart-title { font-family:var(--mono); font-size:10px; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin:14px 0 5px; }
+.chart { width:100%; height:auto; background:rgba(2,6,12,.35); border:1px solid var(--line); }
+.chart .grid { stroke:rgba(63,224,255,.08); stroke-width:1; }
+.chart .axlbl { fill:var(--dim); font-family:var(--mono); font-size:9px; }
+.chart .tgt { stroke:rgba(255,180,84,.45); stroke-width:1; stroke-dasharray:4 3; }
+.chart .tgtlbl { fill:var(--amber); font-family:var(--mono); font-size:8px; }
+.chart-empty { color:var(--dim); font-family:var(--mono); font-size:11px; padding:24px; text-align:center; border:1px solid var(--line); background:rgba(2,6,12,.35); }
+.rd-add { border-top:1px dashed var(--line); margin-top:14px; padding-top:14px; }
+.log-panel { margin-top:8px; }
+.cmp-hint { font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:.5px; margin-bottom:12px; }
+.cmp-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.cmp-chip { font-family:var(--mono); font-size:11px; letter-spacing:.5px; color:var(--dim); background:var(--panel-2); border:1px solid var(--line); padding:7px 12px; cursor:grab; display:flex; align-items:center; gap:8px; transition:all .15s; user-select:none; }
+.cmp-chip:active { cursor:grabbing; }
+.cmp-chip.dragging { opacity:.45; }
+.cmp-drop { border:1px dashed transparent; border-radius:2px; transition:border-color .15s, background .15s; }
+.cmp-drop.drag-over { border-color:var(--cyan); background:rgba(63,224,255,.05); }
+.cmp-drop-hint { color:var(--dim); font-family:var(--mono); font-size:12px; letter-spacing:1px; padding:52px 20px; text-align:center; border:1px dashed var(--line); background:rgba(2,6,12,.35); }
+.cmp-chip:hover { color:var(--text); }
+.cmp-chip .cmp-dot { width:9px; height:9px; border-radius:2px; background:var(--line); flex:0 0 auto; }
+.cmp-chip.plotted { opacity:.4; cursor:default; border-style:dashed; }
+.cmp-legend { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+.cmp-leg { font-family:var(--mono); font-size:10px; letter-spacing:.5px; color:var(--text); display:flex; align-items:center; gap:7px; border:1px solid var(--cc); padding:5px 10px; }
+.cmp-leg .cmp-dot { background:var(--cc); box-shadow:0 0 6px var(--cc); }
+.cmp-picker { margin-top:16px; border-top:1px solid var(--line); padding-top:14px; }
+.cmp-cats { display:flex; gap:8px; margin-bottom:14px; }
+.cmp-count { color:var(--cyan); font-weight:700; margin-left:3px; }
+.cmp-leg.muted { opacity:.4; }
+.ctx-menu { position:fixed; z-index:200; display:none; min-width:150px; background:var(--panel); border:1px solid var(--line-hi); box-shadow:0 8px 26px rgba(0,0,0,.55); }
+.ctx-menu.show { display:block; }
+.ctx-menu button { display:block; width:100%; text-align:left; background:transparent; border:none; color:var(--text); font-family:var(--mono); font-size:11px; letter-spacing:1px; padding:11px 14px; cursor:pointer; }
+.ctx-menu button + button { border-top:1px solid var(--line); }
+.ctx-menu button:hover { background:rgba(63,224,255,.08); color:var(--cyan); }
 table.matrix { border-collapse:collapse; width:100%; min-width:920px; font-size:13px; }
 .matrix th {
   font-family:var(--mono); font-size:10px; letter-spacing:1.5px; color:var(--dim);
@@ -436,6 +470,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
     <button class="tab" data-action="tab" data-tab="matrix" role="tab">Series Matrix</button>
     <button class="tab" data-action="tab" data-tab="timeline" role="tab">Timeline</button>
     <button class="tab" data-action="tab" data-tab="tanks" role="tab">Conditioning</button>
+    <button class="tab" data-action="tab" data-tab="datalog" role="tab">Data Logging</button>
     <button class="tab" data-action="tab" data-tab="orders" role="tab">Orders</button>
     <button class="tab" data-action="tab" data-tab="expenses" role="tab">Expenses</button>
     <button class="tab" data-action="tab" data-tab="activities" role="tab">Activities</button>
@@ -448,6 +483,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal corners" id="modalBox"><span class="c"></span></div></div>
 <div id="toasts"></div>
+<div id="ctxMenu" class="ctx-menu" role="menu"></div>
 
 <script src="config.js"></script>
 <script>
@@ -708,6 +744,10 @@ let phaseFilter = 'all';
 let activityFilter = 'all';
 let mtxBar = 'all', mtxCover = 'all', mtxSev = 'all';
 let condSevSel = 'M';
+let logCat = 'beam', logSev = 'M', logBar = '#5', logCover = '1.5"', logBeam = 1, logBatch = 1, logPrism = 1;
+let logCompare = [];
+let cmpCat = 'beam', cmpSev = 'all', cmpBar = 'all', cmpCover = 'all', cmpBatch = 'all';
+let logMuted = [];
 let lensStep = null;
 let modalOpen = false;
 let pendingRemote = null;   /* remote update held while a modal is open */
@@ -759,7 +799,14 @@ function defaultState() {
       { id: uid(), title: 'UPV baseline readings (ASTM C597)', cat: 'Monitoring', owner: '', due: '', status: 'pending', notes: 'Companion cylinders + beams before conditioning.', phaseId: ph.RT1 },
       { id: uid(), title: 'Batch 1 cylinder program (C39 / C469)', cat: 'Material Testing', owner: '', due: '', status: 'active', notes: '', phaseId: ph.RT1 }
     ],
-    log: [{ t: nowStamp(), msg: 'Board initialized.' }]
+    log: [{ t: nowStamp(), msg: 'Board initialized.' }],
+    logging: {
+      prismCounts: { "1": 3, "2": 3, "3": 3 },
+      data: {
+        'b|M|#5|1.5"|1': { readings: [ { d: '2026-07-01', exp: 0.4 }, { d: '2026-07-08', exp: 0.7 }, { d: '2026-07-15', exp: 1.1 } ], massLoss: null },
+        'p|1|1': { readings: [ { d: '2026-07-01', exp: 0.5 }, { d: '2026-07-08', exp: 0.9 }, { d: '2026-07-15', exp: 1.5 } ] }
+      }
+    }
   };
 }
 
@@ -776,6 +823,9 @@ function normalizeState() {
   state.condDur = state.condDur || {};
   Object.keys(COND_DAYS).forEach((bar) => { state.condDur[bar] = { ...COND_DAYS[bar], ...(state.condDur[bar] || {}) }; });
   state.series ??= []; state.orders ??= []; state.activities ??= []; state.log ??= [];
+  state.logging = state.logging || {};
+  state.logging.prismCounts = state.logging.prismCounts || { "1": 3, "2": 3, "3": 3 };
+  state.logging.data = state.logging.data || {};
   if (!Array.isArray(state.phases) || !state.phases.length) {
     state.phases = ['RT1', 'RT2', 'RT3', 'RT4'].map((n) => ({ id: uid(), name: n }));
   }
@@ -940,6 +990,7 @@ function render() {
   else if (currentTab === 'matrix') v.innerHTML = renderMatrix();
   else if (currentTab === 'timeline') v.innerHTML = renderTimeline();
   else if (currentTab === 'tanks') v.innerHTML = renderTanks();
+  else if (currentTab === 'datalog') v.innerHTML = renderDataLogging();
   else if (currentTab === 'orders') v.innerHTML = renderOrders();
   else if (currentTab === 'expenses') v.innerHTML = renderExpenses();
   else v.innerHTML = renderActivities();
@@ -1240,6 +1291,217 @@ async function saveCondDurations() {
   await saveState();
   toast('CONDITIONING DAYS SAVED');
 }
+
+const EXP_TARGETS = [{ v: 2, label: 'Mild 2\u00D710\u207B\u00B3' }, { v: 3, label: 'Mod 3' }, { v: 4, label: 'Sev 4' }];
+
+function logKeyFor(cat) {
+  return cat === 'beam'
+    ? `b|${logSev}|${logBar}|${logCover}|${logBeam}`
+    : `p|${logBatch}|${logPrism}`;
+}
+function logRec(key, create) {
+  state.logging = state.logging || { prismCounts: {}, data: {} };
+  state.logging.data = state.logging.data || {};
+  if (!state.logging.data[key] && create) state.logging.data[key] = { readings: [], massLoss: null };
+  return state.logging.data[key] || null;
+}
+const CHART_COLORS = ['#3FE0FF', '#4DF59B', '#FFB454', '#FF5C7A', '#B18CFF', '#7EE0C0', '#FF9E6D', '#8AB4FF'];
+function readingsToDayPts(readings) {
+  const rd = (readings || []).filter((r) => r.exp != null && r.exp !== '').slice().sort((a, b) => String(a.d).localeCompare(String(b.d)));
+  if (!rd.length) return [];
+  const d0 = +parseDay(rd[0].d);
+  return rd.map((r) => ({ day: Math.round((+parseDay(r.d) - d0) / DAY), v: Number(r.exp) }));
+}
+function keyLabel(k) {
+  const rec = (state.logging && state.logging.data) ? state.logging.data[k] : null;
+  if (rec && rec.label) return rec.label;
+  const p = String(k).split('|');
+  if (p[0] === 'b') return `${SEV_LABEL[p[1]] || p[1]} \u00B7 ${p[2]} \u00B7 ${p[3]} \u00B7 Beam ${p[4]}`;
+  if (p[0] === 'p') return `Batch ${p[1]} \u00B7 Prism ${p[2]}`;
+  return k;
+}
+function svgDaysChart(seriesList, opts) {
+  opts = opts || {};
+  const withData = (seriesList || []).filter((s) => s.pts && s.pts.length);
+  if (!withData.length) return '<div class="chart-empty">No data logged yet.</div>';
+  const W = 580, H = 235, L = 46, R = 16, T = 14, B = 40;
+  const targets = opts.targets || [];
+  let maxDay = 0, maxV = 1, minV = 0;
+  withData.forEach((s) => s.pts.forEach((p) => { if (p.day > maxDay) maxDay = p.day; if (p.v > maxV) maxV = p.v; if (p.v < minV) minV = p.v; }));
+  targets.forEach((t) => { if (t.v > maxV) maxV = t.v; });
+  if (maxDay === 0) maxDay = 1;
+  maxV += (maxV - minV) * 0.1;
+  const sx = (day) => L + (day / maxDay) * (W - L - R);
+  const sy = (v) => H - B - (v - minV) / (maxV - minV) * (H - T - B);
+  const yt = [minV, (minV + maxV) / 2, maxV].map((v) => `<line x1="${L}" y1="${sy(v).toFixed(1)}" x2="${W - R}" y2="${sy(v).toFixed(1)}" class="grid"/><text x="${L - 5}" y="${(sy(v) + 3).toFixed(1)}" text-anchor="end" class="axlbl">${+v.toFixed(2)}</text>`).join('');
+  const tg = targets.map((t) => `<line x1="${L}" y1="${sy(t.v).toFixed(1)}" x2="${W - R}" y2="${sy(t.v).toFixed(1)}" class="tgt"/><text x="${W - R}" y="${(sy(t.v) - 4).toFixed(1)}" text-anchor="end" class="tgtlbl">${esc(t.label)}</text>`).join('');
+  const lines = withData.map((s, i) => {
+    const color = s.color || CHART_COLORS[i % CHART_COLORS.length];
+    const op = s.muted ? 0.12 : 1;
+    const path = s.pts.map((p, j) => (j ? 'L' : 'M') + sx(p.day).toFixed(1) + ' ' + sy(p.v).toFixed(1)).join(' ');
+    const dots = s.pts.map((p) => `<circle cx="${sx(p.day).toFixed(1)}" cy="${sy(p.v).toFixed(1)}" r="2.6" style="fill:${color};pointer-events:none;opacity:${op}"/>`).join('');
+    const vis = `<path d="${path}" fill="none" stroke="${color}" stroke-width="2" style="filter:drop-shadow(0 0 3px ${color});pointer-events:none;opacity:${op}"/>`;
+    const hit = s.key ? `<path d="${path}" fill="none" stroke="transparent" stroke-width="16" style="cursor:pointer" data-cmpline="1" data-action="log-cmp-mute" data-key="${esc(s.key)}"><title>Left-click to hide \u00B7 right-click for options</title></path>` : '';
+    return vis + dots + hit;
+  }).join('');
+  const xlabs = [0, Math.round(maxDay / 2), maxDay].map((day) => `<text x="${sx(day).toFixed(1)}" y="${H - 22}" text-anchor="middle" class="axlbl">${day}</text>`).join('');
+  const xtitle = `<text x="${((L + (W - R)) / 2).toFixed(0)}" y="${H - 6}" text-anchor="middle" class="axlbl" style="letter-spacing:2px">DAYS</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" preserveAspectRatio="xMidYMid meet">${yt}${tg}${lines}${xlabs}${xtitle}</svg>`;
+}
+
+function renderDataLogging() {
+  const body = editMode ? renderLogMode() : renderCompareMode();
+  return `<div class="panel corners"><span class="c"></span>
+    <div class="panel-title">Data Logging \u2014 ASR Expansion</div>
+    ${body}</div>`;
+}
+function renderLogMode() {
+  const catBtn = (v, label, color) => `<button class="cd-sev ${logCat === v ? 'on' : ''}" data-action="log-cat" data-val="${v}" style="--sc:${color}"><span class="cd-sev-dot"></span>${label}</button>`;
+  const chip = (grp, val, cur, label) => `<button class="chip sm ${String(cur) === String(val) ? 'on' : ''}" data-action="log-${grp}" data-val="${esc(String(val))}">${esc(label)}</button>`;
+  let cascade = '', title = '';
+  if (logCat === 'beam') {
+    cascade =
+      `<div class="mtxfilters"><span class="mf-label">Severity</span>${['M', 'Mo', 'S'].map((s) => chip('sev', s, logSev, SEV_LABEL[s])).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Bar</span>${RT1_BARS.map((x) => chip('bar', x, logBar, x)).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Cover</span>${RT1_COVERS.map((x) => chip('cover', x, logCover, x)).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Beam</span>${[1, 2].map((x) => chip('beam', x, logBeam, 'Beam ' + x)).join('')}</div>`;
+    title = `${SEV_LABEL[logSev]} \u00B7 ${logBar} \u00B7 ${logCover} \u00B7 Beam ${logBeam}`;
+  } else {
+    const cnt = ((state.logging || {}).prismCounts || {})[logBatch] || 3;
+    const prismChips = [];
+    for (let i = 1; i <= cnt; i++) prismChips.push(chip('prism', i, logPrism, 'Prism ' + i));
+    cascade =
+      `<div class="mtxfilters"><span class="mf-label">Batch</span>${[1, 2, 3].map((x) => chip('batch', x, logBatch, 'Batch ' + x)).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Prism</span>${prismChips.join('')}${editMode ? '<button class="chip sm ghost" data-action="log-add-prism">+ Add</button>' : ''}</div>`;
+    title = `Batch ${logBatch} \u00B7 Prism ${logPrism}`;
+  }
+  return `<div class="cd-sevlist" style="flex-direction:row;margin-bottom:14px">${catBtn('beam', 'Beams', 'var(--cyan)')}${catBtn('prism', 'Prisms', 'var(--green)')}</div>
+    ${cascade}
+    ${logSpecimenPanel(logKeyFor(logCat), logCat, title)}`;
+}
+function renderCompareMode() {
+  const data = (state.logging && state.logging.data) || {};
+  const keys = Object.keys(data).filter((k) => (data[k].readings || []).filter((r) => r.exp != null && r.exp !== '').length);
+  if (!keys.length) return `<div class="empty">No specimens have logged readings yet.<br>Unlock edit mode to log data.</div>`;
+
+  const seriesList = logCompare.filter((k) => data[k]).map((k, i) => ({ key: k, label: keyLabel(k), color: CHART_COLORS[i % CHART_COLORS.length], muted: logMuted.indexOf(k) >= 0, pts: readingsToDayPts(data[k].readings) }));
+  const legend = seriesList.length
+    ? `<div class="cmp-legend">${seriesList.map((s) => `<span class="cmp-leg ${s.muted ? 'muted' : ''}" style="--cc:${s.color}"><span class="cmp-dot"></span>${esc(s.label)}</span>`).join('')}<button class="btn-sm" data-action="log-cmp-clear">Clear all</button></div>`
+    : '';
+  const chartInner = seriesList.length ? svgDaysChart(seriesList, { targets: EXP_TARGETS }) : `<div class="cmp-drop-hint">Drag specimens here to plot them.</div>`;
+
+  const beamKeys = keys.filter((k) => k.charAt(0) === 'b');
+  const prismKeys = keys.filter((k) => k.charAt(0) === 'p');
+  const catTab = (v, label, n) => `<button class="chip ${cmpCat === v ? 'on' : ''}" data-action="cmp-cat" data-val="${v}">${label} <b class="cmp-count">${n}</b></button>`;
+  const fchip = (grp, val, cur, label) => `<button class="chip sm ${String(cur) === String(val) ? 'on' : ''}" data-action="cmpf-${grp}" data-val="${esc(String(val))}">${esc(label)}</button>`;
+  const chipFor = (k) => {
+    const plotted = logCompare.indexOf(k) >= 0;
+    return `<span class="cmp-chip ${plotted ? 'plotted' : ''}" draggable="${plotted ? 'false' : 'true'}" data-key="${esc(k)}"><span class="cmp-dot"></span>${esc(keyLabel(k))}</span>`;
+  };
+  let filters = '', matching = [];
+  if (cmpCat === 'prism') {
+    filters = `<div class="mtxfilters"><span class="mf-label">Batch</span>${['all', '1', '2', '3'].map((v) => fchip('batch', v, cmpBatch, v === 'all' ? 'All' : 'Batch ' + v)).join('')}</div>`;
+    matching = prismKeys.filter((k) => { const p = k.split('|'); return cmpBatch === 'all' || p[1] === cmpBatch; });
+  } else {
+    filters =
+      `<div class="mtxfilters"><span class="mf-label">Severity</span>${['all', 'M', 'Mo', 'S'].map((v) => fchip('sev', v, cmpSev, v === 'all' ? 'All' : SEV_LABEL[v])).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Bar</span>${['all', ...RT1_BARS].map((v) => fchip('bar', v, cmpBar, v === 'all' ? 'All' : v)).join('')}</div>` +
+      `<div class="mtxfilters"><span class="mf-label">Cover</span>${['all', ...RT1_COVERS].map((v) => fchip('cover', v, cmpCover, v === 'all' ? 'All' : v)).join('')}</div>`;
+    matching = beamKeys.filter((k) => { const p = k.split('|'); return (cmpSev === 'all' || p[1] === cmpSev) && (cmpBar === 'all' || p[2] === cmpBar) && (cmpCover === 'all' || p[3] === cmpCover); });
+  }
+  const specChips = matching.length ? `<div class="cmp-list">${matching.map(chipFor).join('')}</div>` : `<div class="empty">No specimens match these filters.</div>`;
+
+  return `<div class="cmp-hint">Drag a specimen ID onto the graph to plot it. Left-click a line to hide/show it; right-click a line for remove or data log.</div>
+    ${legend}
+    <div class="cmp-drop">${chartInner}</div>
+    <div class="cmp-picker">
+      <div class="cmp-cats">${catTab('beam', 'Beams', beamKeys.length)}${catTab('prism', 'Prisms', prismKeys.length)}</div>
+      ${filters}
+      ${specChips}
+    </div>`;
+}
+function showDataLog(key) {
+  const rec = (state.logging && state.logging.data) ? state.logging.data[key] : null;
+  if (!rec) return;
+  const rd = (rec.readings || []).slice().sort((a, b) => String(a.d).localeCompare(String(b.d)));
+  const chart = svgDaysChart([{ label: keyLabel(key), color: 'var(--cyan)', pts: readingsToDayPts(rec.readings) }], { targets: EXP_TARGETS });
+  const tbl = rd.length ? `<table class="xsub"><thead><tr><th>Date</th><th class="num">Exp \u00D710\u207B\u00B3</th></tr></thead><tbody>${rd.map((r) => `<tr><td>${esc(r.d)}</td><td class="num">${r.exp}</td></tr>`).join('')}</tbody></table>` : '<div class="chart-empty">No readings.</div>';
+  const ml = key.charAt(0) === 'b' && rec.massLoss != null ? `<div class="sp-sub"><span class="sp-mass">Mass loss: ${rec.massLoss}%</span></div>` : '';
+  openModal(`<h2>${esc(keyLabel(key))}</h2>${ml}${chart}<div class="chart-title">Readings</div><div class="table-scroll">${tbl}</div>
+    <div class="modal-actions"><button class="btn-go" data-action="close-modal">Close</button></div>`, true);
+}
+function showCtxMenu(x, y, key) {
+  const m = $('#ctxMenu');
+  if (!m) return;
+  m.innerHTML = `<button data-action="ctx-showlog" data-key="${esc(key)}">Show data log</button><button data-action="ctx-remove" data-key="${esc(key)}">Remove line</button>`;
+  const mw = 160, mh = 84;
+  m.style.left = Math.min(x, window.innerWidth - mw - 8) + 'px';
+  m.style.top = Math.min(y, window.innerHeight - mh - 8) + 'px';
+  m.classList.add('show');
+}
+function hideCtxMenu() { const m = $('#ctxMenu'); if (m) m.classList.remove('show'); }
+function logSpecimenPanel(key, kind, title) {
+  const rec = (state.logging && state.logging.data) ? state.logging.data[key] : null;
+  const rd = rec ? (rec.readings || []) : [];
+  const lbl = rec && rec.label ? rec.label : '';
+  const idField = editMode
+    ? `<div class="field" style="max-width:360px;margin-bottom:14px"><label>Specimen ID / name (optional)</label><input id="logLabel" maxlength="60" placeholder="add your naming later" value="${esc(lbl)}"><button class="btn-sm" data-action="log-save-label" data-key="${esc(key)}" style="margin-top:8px">Save ID</button></div>`
+    : (lbl ? `<div class="sp-sub">ID: ${esc(lbl)}</div>` : '');
+  const chart = svgDaysChart([{ label: title, color: 'var(--cyan)', pts: readingsToDayPts(rd) }], { targets: EXP_TARGETS });
+  const tbl = rd.length
+    ? `<div class="chart-title">Readings</div><div class="table-scroll"><table class="xsub"><thead><tr><th>Date</th><th class="num">Exp \u00D710\u207B\u00B3</th>${editMode ? '<th></th>' : ''}</tr></thead><tbody>${rd.map((r, i) => `<tr><td>${esc(r.d)}</td><td class="num">${r.exp}</td>${editMode ? `<td class="num"><button class="icon-btn danger" data-action="log-del-reading" data-key="${esc(key)}" data-idx="${i}" title="Remove">&#10005;</button></td>` : ''}</tr>`).join('')}</tbody></table></div>`
+    : '';
+  const massLoss = kind === 'beam'
+    ? (editMode
+      ? `<div class="field-row" style="margin-top:12px;align-items:flex-end;max-width:440px"><div class="field"><label>Mass Loss (%) \u2014 after testing</label><input type="number" step="0.1" id="logMass" value="${rec && rec.massLoss != null ? rec.massLoss : ''}"></div><button class="btn-ghost" data-action="log-save-mass" data-key="${esc(key)}">Save</button></div>`
+      : (rec && rec.massLoss != null ? `<div class="sp-sub" style="margin-top:8px"><span class="sp-mass">Mass loss: ${rec.massLoss}%</span></div>` : ''))
+    : '';
+  const addForm = editMode
+    ? `<div class="rd-add"><div class="field-row"><div class="field"><label>Date</label><input type="date" id="logDate" value="${todayISO()}"></div><div class="field"><label>Expansion \u00D710\u207B\u00B3</label><input type="number" step="0.01" id="logExp"></div></div><button class="btn-go" data-action="log-add-reading" data-key="${esc(key)}">+ Add Reading</button>${massLoss}</div>`
+    : massLoss;
+  return `<div class="log-panel">${idField}${chart}${tbl}${addForm}</div>`;
+}
+async function logAddReading(key) {
+  if (!requireEdit()) return;
+  const d = $('#logDate').value, exp = $('#logExp').value;
+  if (!d || exp === '') { toast('DATE AND EXPANSION REQUIRED', 'warn'); return; }
+  const rec = logRec(key, true);
+  rec.readings.push({ d, exp: parseFloat(exp) });
+  rec.readings.sort((a, b) => String(a.d).localeCompare(String(b.d)));
+  pushLog(`Expansion logged (${key}): ${exp} on ${d}.`);
+  render(); await saveState();
+  toast('READING LOGGED');
+}
+async function logSaveLabel(key) {
+  if (!requireEdit()) return;
+  const rec = logRec(key, true);
+  rec.label = $('#logLabel').value.trim().slice(0, 60);
+  render(); await saveState();
+  toast('ID SAVED');
+}
+async function logSaveMass(key) {
+  if (!requireEdit()) return;
+  const rec = logRec(key, true);
+  const v = $('#logMass').value;
+  rec.massLoss = v === '' ? null : parseFloat(v);
+  render(); await saveState();
+  toast('MASS LOSS SAVED');
+}
+async function logDelReading(key, idx) {
+  if (!requireEdit()) return;
+  const rec = (state.logging && state.logging.data) ? state.logging.data[key] : null;
+  if (rec && rec.readings) { rec.readings.splice(Number(idx), 1); render(); await saveState(); }
+}
+async function logAddPrism() {
+  if (!requireEdit()) return;
+  state.logging = state.logging || { prismCounts: {}, data: {} };
+  state.logging.prismCounts = state.logging.prismCounts || {};
+  const cur = state.logging.prismCounts[logBatch] || 3;
+  state.logging.prismCounts[logBatch] = cur + 1;
+  logPrism = cur + 1;
+  render(); await saveState();
+}
+
 
 function renderTanks() {
   const list = fSeries();
@@ -1573,6 +1835,7 @@ function closeModal() {
 $('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modalOpen) closeModal();
+  if (e.key === 'Escape') hideCtxMenu();
   if (e.key === 'Enter' && modalOpen && e.target && e.target.id === 'passInput') tryUnlock();
   if (e.key === 'Tab' && modalOpen) {
     const box = $('#modalBox');
@@ -1584,6 +1847,47 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+/* drag a specimen chip onto the compare graph to plot it */
+document.addEventListener('dragstart', (e) => {
+  const chip = e.target.closest ? e.target.closest('.cmp-chip[draggable="true"]') : null;
+  if (chip && chip.dataset.key) {
+    try { e.dataTransfer.setData('text/plain', chip.dataset.key); e.dataTransfer.effectAllowed = 'copy'; } catch (_) {}
+    chip.classList.add('dragging');
+  }
+});
+document.addEventListener('dragend', (e) => {
+  const chip = e.target.closest ? e.target.closest('.cmp-chip') : null;
+  if (chip) chip.classList.remove('dragging');
+});
+document.addEventListener('dragover', (e) => {
+  const dz = e.target.closest ? e.target.closest('.cmp-drop') : null;
+  if (dz) { e.preventDefault(); try { e.dataTransfer.dropEffect = 'copy'; } catch (_) {} dz.classList.add('drag-over'); }
+});
+document.addEventListener('dragleave', (e) => {
+  const dz = e.target.closest ? e.target.closest('.cmp-drop') : null;
+  if (dz && !dz.contains(e.relatedTarget)) dz.classList.remove('drag-over');
+});
+document.addEventListener('drop', (e) => {
+  const dz = e.target.closest ? e.target.closest('.cmp-drop') : null;
+  if (!dz) return;
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  let key = '';
+  try { key = e.dataTransfer.getData('text/plain'); } catch (_) {}
+  const data = (state.logging && state.logging.data) || {};
+  if (key && data[key] && logCompare.indexOf(key) < 0) { logCompare.push(key); render(); }
+});
+document.addEventListener('contextmenu', (e) => {
+  const line = e.target.closest ? e.target.closest('[data-cmpline]') : null;
+  if (line) { e.preventDefault(); showCtxMenu(e.clientX, e.clientY, line.getAttribute('data-key')); }
+});
+document.addEventListener('click', (e) => {
+  const m = $('#ctxMenu');
+  if (m && m.classList.contains('show') && !(e.target.closest && e.target.closest('#ctxMenu'))) hideCtxMenu();
+});
+window.addEventListener('scroll', hideCtxMenu, true);
+window.addEventListener('resize', hideCtxMenu);
 
 function openLockMenu() {
   if (editMode) {
@@ -2015,6 +2319,27 @@ document.addEventListener('click', (e) => {
     'mtx-cover':      () => { mtxCover = d.val; render(); },
     'mtx-sev':        () => { mtxSev = d.val; render(); },
     'cond-sev-sel':   () => { condSevSel = d.val; render(); },
+    'log-cat':        () => { logCat = d.val; render(); },
+    'log-sev':        () => { logSev = d.val; render(); },
+    'log-bar':        () => { logBar = d.val; render(); },
+    'log-cover':      () => { logCover = d.val; render(); },
+    'log-beam':       () => { logBeam = Number(d.val); render(); },
+    'log-batch':      () => { logBatch = Number(d.val); logPrism = 1; render(); },
+    'log-prism':      () => { logPrism = Number(d.val); render(); },
+    'log-add-prism':  () => logAddPrism(),
+    'log-add-reading':() => logAddReading(d.key),
+    'log-save-label': () => logSaveLabel(d.key),
+    'log-save-mass':  () => logSaveMass(d.key),
+    'log-del-reading':() => logDelReading(d.key, d.idx),
+    'cmp-cat':        () => { cmpCat = d.val; render(); },
+    'cmpf-sev':       () => { cmpSev = d.val; render(); },
+    'cmpf-bar':       () => { cmpBar = d.val; render(); },
+    'cmpf-cover':     () => { cmpCover = d.val; render(); },
+    'cmpf-batch':     () => { cmpBatch = d.val; render(); },
+    'log-cmp-mute':   () => { const i = logMuted.indexOf(d.key); if (i >= 0) logMuted.splice(i, 1); else logMuted.push(d.key); render(); },
+    'ctx-remove':     () => { hideCtxMenu(); const i = logCompare.indexOf(d.key); if (i >= 0) { logCompare.splice(i, 1); const j = logMuted.indexOf(d.key); if (j >= 0) logMuted.splice(j, 1); render(); } },
+    'ctx-showlog':    () => { hideCtxMenu(); showDataLog(d.key); },
+    'log-cmp-clear':  () => { logCompare = []; logMuted = []; render(); },
     'cond-edit-modal':() => openCondModal(),
     'save-cond-durations': () => saveCondDurations(),
     'cycle-step':     () => cycleStep(d.series, d.step),
