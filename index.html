@@ -449,6 +449,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="modal corners" id="modalBox"><span class="c"></span></div></div>
 <div id="toasts"></div>
 
+<script src="config.js"></script>
 <script>
 'use strict';
 /* ============================================================
@@ -458,7 +459,7 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
    1. CLAUDE   — inside a Claude artifact, uses window.storage
                  shared scope (polled every 25 s).
    2. FIREBASE — standalone on the web (GitHub Pages, Netlify,
-                 lab server). Paste your Firebase config below.
+                 lab server). Firebase settings live in config.js.
                  Realtime: changes push instantly to all viewers.
    3. LOCAL    — no backend configured: runs as a local preview,
                  nothing is saved or shared (warning shown).
@@ -473,16 +474,11 @@ button.btn-danger { font-family:var(--mono); font-size:12px; letter-spacing:1px;
    ║  here (Firebase console → Project settings → Your apps).  ║
    ║  databaseURL is REQUIRED — create a Realtime Database.    ║
    ╚══════════════════════════════════════════════════════════╝ */
-const FIREBASE_CONFIG = {
-  apiKey:        "",   /* e.g. "AIzaSy..." */
-  authDomain:    "",   /* e.g. "fsel-tracker.firebaseapp.com" */
-  databaseURL:   "",   /* e.g. "https://fsel-tracker-default-rtdb.firebaseio.com" */
-  projectId:     "",   /* e.g. "fsel-tracker" */
-  storageBucket: "",
-  messagingSenderId: "",
-  appId:         ""
+const _CFG = (typeof window !== 'undefined' && window.FSEL_CONFIG) ? window.FSEL_CONFIG : {};
+const FIREBASE_CONFIG = _CFG.firebase || {
+  apiKey: "", authDomain: "", databaseURL: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: ""
 };
-const FIREBASE_PATH = 'fsel_tracker/state';   /* where the board lives in your database */
+const FIREBASE_PATH = _CFG.path || 'fsel_tracker/state';
 
 /* ----------------------------- CONFIG ----------------------------- */
 const STORE_KEY = 'fsel_tracker_state_v2';
@@ -631,11 +627,13 @@ const Store = {
       this.mode = 'claude';
       return;
     }
-    if (FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.databaseURL) {
+    if (FIREBASE_CONFIG.databaseURL) {
       try {
         await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
         await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
-        firebase.initializeApp(FIREBASE_CONFIG);
+        const fb = {};
+        Object.keys(FIREBASE_CONFIG).forEach((k) => { if (FIREBASE_CONFIG[k]) fb[k] = FIREBASE_CONFIG[k]; });
+        firebase.initializeApp(fb);
         this._ref = firebase.database().ref(FIREBASE_PATH);
         this.mode = 'firebase';
         return;
